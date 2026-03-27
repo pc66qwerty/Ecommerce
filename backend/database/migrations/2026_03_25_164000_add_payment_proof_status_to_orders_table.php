@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('orders', function (Blueprint $table) {
-            $table->enum('payment_proof_status', ['pending', 'received', 'approved'])->default('pending')->after('status');
+            $table->string('payment_proof_status')->default('pending')->after('status');
         });
     }
 

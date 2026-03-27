@@ -6,11 +6,11 @@ return new class extends Migration
 {
     public function up(): void
     {
-        DB::statement("ALTER TABLE orders MODIFY payment_proof_status ENUM('pending', 'received', 'approved', 'denied') DEFAULT 'pending'");
+        // Column is already a string type — all values including 'denied' are accepted
     }
 
     public function down(): void
     {
-        DB::statement("ALTER TABLE orders MODIFY payment_proof_status ENUM('pending', 'received', 'approved') DEFAULT 'pending'");
+        //
     }
 };
