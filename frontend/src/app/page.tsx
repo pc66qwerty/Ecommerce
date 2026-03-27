@@ -114,7 +114,7 @@ export default function Home() {
 
         {/* Flash sale countdown */}
         <div className="mt-6">
-          <FlashSaleCountdown discountedCount={discountedCount} onShowDiscounted={() => { setDiscountedOnly(true); document.getElementById('productos')?.scrollIntoView({ behavior: 'smooth' }); }} />
+          <FlashSaleCountdown discountedCount={discountedCount} onShowDiscounted={() => { setDiscountedOnly(true); document.getElementById('productos')?.scrollIntoView({ behavior: 'smooth' }); }} onExpire={() => setDiscountedOnly(false)} />
         </div>
 
         {/* Filters bar */}

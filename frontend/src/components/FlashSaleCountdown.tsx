@@ -13,15 +13,18 @@ function getSecondsUntilMidnight() {
 
 function pad(n: number) { return String(n).padStart(2, '0'); }
 
-export default function FlashSaleCountdown({ discountedCount, onShowDiscounted }: { discountedCount: number; onShowDiscounted?: () => void }) {
+export default function FlashSaleCountdown({ discountedCount, onShowDiscounted, onExpire }: { discountedCount: number; onShowDiscounted?: () => void; onExpire?: () => void }) {
   const [seconds, setSeconds] = useState(getSecondsUntilMidnight());
 
   useEffect(() => {
-    const t = setInterval(() => setSeconds(s => s > 0 ? s - 1 : getSecondsUntilMidnight()), 1000);
+    const t = setInterval(() => setSeconds(s => {
+      if (s <= 1) { onExpire?.(); return 0; }
+      return s - 1;
+    }), 1000);
     return () => clearInterval(t);
-  }, []);
+  }, [onExpire]);
 
-  if (discountedCount === 0) return null;
+  if (discountedCount === 0 || seconds === 0) return null;
 
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);

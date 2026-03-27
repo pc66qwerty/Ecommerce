@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use App\Models\Coupon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -26,22 +25,7 @@ class AuthController extends Controller
             'password' => Hash::make($validated['password']),
         ]);
 
-        // Create personal welcome coupon for new user
-        $couponCode = 'BIENVENIDO-' . strtoupper(substr(md5($user->id . $user->email), 0, 6));
-        Coupon::create([
-            'user_id'        => $user->id,
-            'code'           => $couponCode,
-            'description'    => '¡Bienvenido! Cupón exclusivo de registro — 10% de descuento en tu primera compra.',
-            'discount_type'  => 'percentage',
-            'discount_value' => 10,
-            'min_purchase'   => 0,
-            'max_uses'       => 1,
-            'uses_count'     => 0,
-            'is_active'      => true,
-            'expires_at'     => now()->addDays(30),
-        ]);
-
-        $token = $user->createToken('auth_token')->plainTextToken;
+$token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'access_token' => $token,

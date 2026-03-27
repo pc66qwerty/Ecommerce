@@ -18,8 +18,7 @@ export default function ProductCard({ product }: { product: any }) {
   const price = parseFloat(product.price || '0');
   const discountPrice = product.discount_price ? parseFloat(product.discount_price) : null;
   const displayPrice = discountPrice ?? price;
-  const originalPrice = discountPrice ? price : price * 1.6;
-  const discountPercent = Math.round(((originalPrice - displayPrice) / originalPrice) * 100);
+  const discountPercent = discountPrice ? Math.round(((price - discountPrice) / price) * 100) : 0;
   const inWishlist = isInWishlist(product.id);
 
   const toggleWishlist = (e: React.MouseEvent) => {
@@ -49,9 +48,11 @@ export default function ProductCard({ product }: { product: any }) {
           sizes="(max-width: 768px) 50vw, 33vw"
         />
         {/* Discount Badge */}
-        <div className="absolute top-2 left-2 bg-red-600 text-white text-xs font-black px-2 py-1 rounded-full shadow-md z-10 tracking-wider">
-          -{discountPercent}%
-        </div>
+        {discountPrice && (
+          <div className="absolute top-2 left-2 bg-red-600 text-white text-xs font-black px-2 py-1 rounded-full shadow-md z-10 tracking-wider">
+            -{discountPercent}%
+          </div>
+        )}
         {/* Wishlist button */}
         <button
           onClick={toggleWishlist}
@@ -86,7 +87,9 @@ export default function ProductCard({ product }: { product: any }) {
 
         <div className="mt-auto flex items-end justify-between pt-2 border-t border-gray-50">
           <div className="flex flex-col">
-            <span className="text-xs text-gray-400 line-through font-medium leading-none mb-1">Q{originalPrice.toFixed(2)}</span>
+            {discountPrice && (
+              <span className="text-xs text-gray-400 line-through font-medium leading-none mb-1">Q{price.toFixed(2)}</span>
+            )}
             <div className="flex items-center">
               <span className="text-sm font-bold text-[#ff5000] mr-0.5">Q</span>
               <span className="text-xl font-black text-[#ff5000] leading-none">{displayPrice.toFixed(2)}</span>
