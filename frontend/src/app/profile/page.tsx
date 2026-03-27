@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { User, Package, Heart, Tag, Settings, HeadphonesIcon, LogOut, ChevronRight, MapPin } from 'lucide-react';
+import { User, Package, Heart, Tag, Settings, HeadphonesIcon, LogOut, ChevronRight, MapPin, LayoutDashboard } from 'lucide-react';
 import Link from 'next/link';
 import api from '@/lib/axios';
 import { useRouter } from 'next/navigation';
@@ -102,6 +102,11 @@ export default function ProfilePage() {
 
       {/* Menu List */}
       <div className="max-w-3xl mx-auto px-4 mt-6 space-y-4">
+        {user?.role === 'admin' && (
+          <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-[#ff5000]/30">
+            <MenuLink href="/admin" icon={LayoutDashboard} label="Panel Administrativo" subtitle="Gestiona productos, pedidos y usuarios" iconColor="text-[#ff5000]" />
+          </div>
+        )}
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
           <MenuLink href="/profile/orders" icon={Package} label={t('profile.my_orders')} subtitle={t('profile.my_orders_sub')} iconColor="text-blue-500" />
           <MenuLink href="/orders/tracking" icon={MapPin} label="Rastrear Pedido" subtitle="Consulta el estado de tu envío" iconColor="text-[#ff5000]" />
