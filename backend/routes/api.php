@@ -105,15 +105,14 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
         if ($secret !== 'reset2026mian') {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
-        \Illuminate\Support\Facades\DB::statement('SET session_replication_role = replica');
+        \Illuminate\Support\Facades\DB::table('wishlists')->delete();
+        \Illuminate\Support\Facades\DB::table('order_items')->delete();
+        \Illuminate\Support\Facades\DB::table('orders')->delete();
+        \Illuminate\Support\Facades\DB::table('coupons')->delete();
+        \Illuminate\Support\Facades\DB::table('product_images')->delete();
+        \Illuminate\Support\Facades\DB::table('products')->delete();
+        \Illuminate\Support\Facades\DB::table('categories')->delete();
         \App\Models\User::where('role', '!=', 'admin')->delete();
-        \Illuminate\Support\Facades\DB::table('orders')->truncate();
-        \Illuminate\Support\Facades\DB::table('order_items')->truncate();
-        \Illuminate\Support\Facades\DB::table('coupons')->truncate();
-        \Illuminate\Support\Facades\DB::table('products')->truncate();
-        \Illuminate\Support\Facades\DB::table('categories')->truncate();
-        \Illuminate\Support\Facades\DB::table('wishlists')->truncate();
-        \Illuminate\Support\Facades\DB::statement('SET session_replication_role = DEFAULT');
         return response()->json(['message' => 'Datos eliminados correctamente. Solo queda el admin.']);
     });
 });
