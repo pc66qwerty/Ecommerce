@@ -69,10 +69,7 @@ export default function ProductDetail() {
     setAdding(true);
     addToCart(product, 1);
     showToast(`${product.name} agregado al carrito`);
-    setTimeout(() => {
-      setAdding(false);
-      router.push('/cart');
-    }, 500);
+    setTimeout(() => setAdding(false), 500);
   };
 
   const handleSubmitReview = async (e: React.FormEvent) => {

@@ -37,6 +37,7 @@ Route::get('/orders/track/{reference}', [OrderController::class, 'trackOrder']);
 
 // Public Settings Routes
 Route::get('/settings/carousel', [SettingController::class, 'getCarousel']);
+Route::get('/settings/whatsapp', [SettingController::class, 'getWhatsapp']);
 
 // Public Coupon Routes
 Route::get('/coupons/public', [CouponController::class, 'publicList']);
@@ -84,6 +85,7 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
 
     // Admin Settings
     Route::put('/admin/settings/carousel', [SettingController::class, 'updateCarousel']);
+    Route::put('/admin/settings/whatsapp', [SettingController::class, 'updateWhatsapp']);
 
     // Admin Coupons
     Route::get('/admin/coupons', [CouponController::class, 'index']);

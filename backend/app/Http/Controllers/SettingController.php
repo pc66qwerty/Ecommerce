@@ -14,6 +14,22 @@ class SettingController extends Controller
         return response()->json($slides);
     }
 
+    public function getWhatsapp()
+    {
+        $row = DB::table('settings')->where('key', 'whatsapp_number')->first();
+        return response()->json(['whatsapp_number' => $row ? $row->value : '']);
+    }
+
+    public function updateWhatsapp(Request $request)
+    {
+        $request->validate(['whatsapp_number' => 'required|string|max:20']);
+        DB::table('settings')->updateOrInsert(
+            ['key' => 'whatsapp_number'],
+            ['value' => $request->whatsapp_number, 'updated_at' => now()]
+        );
+        return response()->json(['message' => 'Número actualizado correctamente']);
+    }
+
     public function updateCarousel(Request $request)
     {
         $request->validate([

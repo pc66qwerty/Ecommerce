@@ -42,6 +42,9 @@ export default function AdminDashboard() {
   const [carouselSlides, setCarouselSlides] = useState([{ ...emptySlide }, { ...emptySlide }, { ...emptySlide }]);
   const [carouselSaving, setCarouselSaving] = useState(false);
 
+  const [whatsappNumber, setWhatsappNumber] = useState('');
+  const [whatsappSaving, setWhatsappSaving] = useState(false);
+
   const [loadingData, setLoadingData] = useState(false);
   const [stats, setStats] = useState<any>(null);
   const { user, isAuthenticated, isLoading, logout } = useAuthStore();
@@ -69,7 +72,7 @@ export default function AdminDashboard() {
   const loadData = async () => {
     setLoadingData(true);
     try {
-      const [oRes, uRes, pRes, cRes, cRes2, carRes, statsRes] = await Promise.allSettled([
+      const [oRes, uRes, pRes, cRes, cRes2, carRes, statsRes, waRes] = await Promise.allSettled([
         api.get('/admin/orders'),
         api.get('/admin/users'),
         api.get('/products'),
@@ -77,6 +80,7 @@ export default function AdminDashboard() {
         api.get('/admin/coupons'),
         api.get('/settings/carousel'),
         api.get('/admin/stats'),
+        api.get('/settings/whatsapp'),
       ]);
       if (oRes.status === 'fulfilled') setOrders(oRes.value.data);
       if (uRes.status === 'fulfilled') setUsersList(uRes.value.data);
@@ -85,6 +89,7 @@ export default function AdminDashboard() {
       if (cRes2.status === 'fulfilled') setCoupons(cRes2.value.data);
       if (carRes.status === 'fulfilled' && Array.isArray(carRes.value.data) && carRes.value.data.length > 0) setCarouselSlides(carRes.value.data);
       if (statsRes.status === 'fulfilled') setStats(statsRes.value.data);
+      if (waRes.status === 'fulfilled') setWhatsappNumber(waRes.value.data.whatsapp_number || '');
     } catch (err: any) {
       alert('Error al cargar los datos de administración');
     } finally {
@@ -131,7 +136,9 @@ export default function AdminDashboard() {
     const ref = order.reference_number;
     const status = statusLabelsES[order.status] || order.status;
     const msg = `Hola ${name}, te informamos que tu pedido *${ref}* ha sido actualizado a: *${status}*. ¡Gracias por tu compra!`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+    const phone = order.user?.phone ? order.user.phone.replace('+', '') : whatsappNumber;
+    const base = phone ? `https://wa.me/${phone}` : 'https://wa.me/';
+    window.open(`${base}?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
   const approvePaymentProof = async (id: number) => {
@@ -426,6 +433,19 @@ export default function AdminDashboard() {
     if (carouselSlides.length > 1) setCarouselSlides(prev => prev.filter((_, i) => i !== index));
   };
 
+  const handleSaveWhatsapp = async () => {
+    if (!whatsappNumber.trim()) return;
+    setWhatsappSaving(true);
+    try {
+      await api.put('/admin/settings/whatsapp', { whatsapp_number: whatsappNumber });
+      alert('¡Número de WhatsApp actualizado!');
+    } catch (err: any) {
+      alert(`Error: ${err.response?.data?.message || 'No se pudo guardar el número.'}`);
+    } finally {
+      setWhatsappSaving(false);
+    }
+  };
+
   const TABS = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
     { id: 'orders', label: 'Pedidos', icon: Package },
@@ -434,6 +454,7 @@ export default function AdminDashboard() {
     { id: 'users', label: 'Usuarios', icon: Users },
     { id: 'coupons', label: 'Cupones', icon: Tag },
     { id: 'carousel', label: 'Carrusel', icon: ImageIcon },
+    { id: 'settings', label: 'Configuración', icon: Settings },
   ];
 
   const paymentStatusBadge = (status: string) => {
@@ -952,6 +973,34 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'settings' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 max-w-lg">
+              <div className="flex items-center gap-2 mb-5">
+                <MessageCircle size={18} className="text-green-500" />
+                <h3 className="font-extrabold text-gray-900 text-lg">Número de WhatsApp</h3>
+              </div>
+              <p className="text-xs text-gray-400 font-medium mb-4">Este número se usa para notificar a los clientes sobre sus pedidos. Incluye el código de país, ej: <span className="font-mono text-gray-600">50212345678</span></p>
+              <div className="flex gap-3">
+                <input
+                  type="tel"
+                  value={whatsappNumber}
+                  onChange={e => setWhatsappNumber(e.target.value)}
+                  className="flex-1 bg-gray-100 border border-gray-300 text-gray-900 rounded-xl p-3 text-sm outline-none focus:border-[#ff5000] focus:ring-1 focus:ring-[#ff5000] font-mono"
+                  placeholder="50212345678"
+                />
+                <button
+                  onClick={handleSaveWhatsapp}
+                  disabled={whatsappSaving}
+                  className="bg-green-500 hover:bg-green-600 text-white font-bold px-5 py-3 rounded-xl text-sm transition-colors disabled:opacity-50"
+                >
+                  {whatsappSaving ? 'Guardando...' : 'Guardar'}
+                </button>
               </div>
             </div>
           </div>

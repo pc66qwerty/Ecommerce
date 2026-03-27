@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Zap } from 'lucide-react';
 
 function getSecondsUntilMidnight() {
@@ -12,7 +13,7 @@ function getSecondsUntilMidnight() {
 
 function pad(n: number) { return String(n).padStart(2, '0'); }
 
-export default function FlashSaleCountdown({ discountedCount }: { discountedCount: number }) {
+export default function FlashSaleCountdown({ discountedCount, onShowDiscounted }: { discountedCount: number; onShowDiscounted?: () => void }) {
   const [seconds, setSeconds] = useState(getSecondsUntilMidnight());
 
   useEffect(() => {
@@ -27,7 +28,7 @@ export default function FlashSaleCountdown({ discountedCount }: { discountedCoun
   const s = seconds % 60;
 
   return (
-    <div className="bg-[#111] text-white py-3 px-4 mb-6 rounded-2xl mx-4 md:mx-0 shadow-lg">
+    <div onClick={onShowDiscounted} className={`bg-[#111] text-white py-3 px-4 mb-6 rounded-2xl mx-4 md:mx-0 shadow-lg ${onShowDiscounted ? 'cursor-pointer hover:bg-[#1a1a1a] transition-colors' : ''}`}>
       <div className="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-2">
           <span className="bg-[#ff5000] p-1.5 rounded-lg">
@@ -35,7 +36,7 @@ export default function FlashSaleCountdown({ discountedCount }: { discountedCoun
           </span>
           <div>
             <p className="text-xs font-black uppercase tracking-widest text-[#ff5000]">🔥 ¡Solo por Hoy!</p>
-            <p className="text-[11px] text-gray-300 font-medium">{discountedCount} productos con descuento — termina hoy</p>
+            <p className="text-[11px] text-gray-300 font-medium">{discountedCount} productos con descuento — toca para ver</p>
           </div>
         </div>
         <div className="flex items-center gap-1.5">

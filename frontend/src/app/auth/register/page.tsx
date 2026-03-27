@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/useAuthStore';
 
 export default function RegisterPage() {
-  const [formData, setFormData] = useState({ name: '', email: '', password: '' });
+  const [formData, setFormData] = useState({ name: '', email: '', password: '', phone: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -28,7 +28,8 @@ export default function RegisterPage() {
     try {
       try { await api.get('/sanctum/csrf-cookie', { baseURL: 'http://localhost:8000' }); } catch(err) {}
 
-      const res = await api.post('/auth/register', formData);
+      const payload = { ...formData, phone: formData.phone ? `+502${formData.phone}` : undefined };
+      const res = await api.post('/auth/register', payload);
 
       if (res.data.access_token) {
         api.defaults.headers.common['Authorization'] = `Bearer ${res.data.access_token}`;
@@ -67,6 +68,13 @@ export default function RegisterPage() {
             <div>
               <label className="sr-only">{t('auth.password')}</label>
               <input name="password" type="password" required minLength={8} value={formData.password} onChange={handleInputChange} className="appearance-none relative block w-full px-4 py-4 border border-gray-200 placeholder-gray-400 text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff5000] focus:border-[#ff5000] focus:z-10 sm:text-sm font-bold bg-gray-50 transition-colors" placeholder={t('auth.password_hint')} />
+            </div>
+            <div>
+              <label className="sr-only">Teléfono</label>
+              <div className="flex">
+                <span className="inline-flex items-center px-3 rounded-l-xl border border-r-0 border-gray-200 bg-gray-100 text-gray-500 text-sm font-bold">🇬🇹 +502</span>
+                <input name="phone" type="tel" value={formData.phone} onChange={handleInputChange} maxLength={8} pattern="[2-7][0-9]{7}" className="appearance-none block w-full px-4 py-4 border border-gray-200 placeholder-gray-400 text-gray-900 rounded-r-xl focus:outline-none focus:ring-2 focus:ring-[#ff5000] focus:border-[#ff5000] sm:text-sm font-bold bg-gray-50 transition-colors" placeholder="Número de teléfono (opcional)" />
+              </div>
             </div>
           </div>
 

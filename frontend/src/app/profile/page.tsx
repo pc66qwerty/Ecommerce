@@ -46,7 +46,7 @@ export default function ProfilePage() {
           </div>
           <div>
             <h1 className="text-xl font-bold tracking-tight">{user ? user.name : t('profile.guest')}</h1>
-             <p className="text-sm opacity-90 font-medium">{t('profile.enthusiast')}</p>
+            {user?.phone && <p className="text-sm opacity-80 font-medium">{user.phone}</p>}
           </div>
           <div className="ml-auto">
             {!user ? (

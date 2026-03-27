@@ -27,6 +27,7 @@ export default function Home() {
   const { t } = useTranslation();
   const recentlyViewed = useRecentlyViewed();
   const [visibleCount, setVisibleCount] = useState(12);
+  const [discountedOnly, setDiscountedOnly] = useState(false);
 
   useEffect(() => {
     api.get('/products')
@@ -59,6 +60,10 @@ export default function Home() {
       result = result.filter(p => p.stock > 0);
     }
 
+    if (discountedOnly) {
+      result = result.filter(p => p.discount_price && p.discount_price > 0);
+    }
+
     if (priceMin !== '') {
       result = result.filter(p => (p.discount_price || p.price) >= parseFloat(priceMin));
     }
@@ -81,7 +86,7 @@ export default function Home() {
 
   useEffect(() => { setVisibleCount(12); }, [selectedCategory, query, sortBy, priceMin, priceMax, inStockOnly]);
 
-  const isFiltering = selectedCategory !== null || query.trim() !== '';
+  const isFiltering = selectedCategory !== null || query.trim() !== '' || discountedOnly;
   const hasActiveFilters = sortBy !== 'newest' || priceMin !== '' || priceMax !== '' || inStockOnly;
   const clearFilters = () => { setSortBy('newest'); setPriceMin(''); setPriceMax(''); setInStockOnly(false); };
   const discountedCount = useMemo(() => products.filter(p => p.discount_price && p.discount_price > 0).length, [products]);
@@ -109,7 +114,7 @@ export default function Home() {
 
         {/* Flash sale countdown */}
         <div className="mt-6">
-          <FlashSaleCountdown discountedCount={discountedCount} />
+          <FlashSaleCountdown discountedCount={discountedCount} onShowDiscounted={() => { setDiscountedOnly(true); document.getElementById('productos')?.scrollIntoView({ behavior: 'smooth' }); }} />
         </div>
 
         {/* Filters bar */}
@@ -165,7 +170,7 @@ export default function Home() {
         </div>
 
         {/* Section header */}
-        <div className="mb-6 flex justify-between items-end">
+        <div id="productos" className="mb-6 flex justify-between items-end">
           <h2 className="text-xl font-black text-gray-900 tracking-tight flex items-center gap-3">
             {isFiltering ? (
               <>
@@ -182,7 +187,7 @@ export default function Home() {
             )}
           </h2>
           {isFiltering && (
-            <button onClick={() => { setSelectedCategory(null); useSearchStore.getState().setQuery(''); }} className="text-xs font-bold text-[#ff5000] hover:underline">
+            <button onClick={() => { setSelectedCategory(null); useSearchStore.getState().setQuery(''); setDiscountedOnly(false); }} className="text-xs font-bold text-[#ff5000] hover:underline">
               {t('home.see_all')}
             </button>
           )}

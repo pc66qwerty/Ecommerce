@@ -11,7 +11,8 @@ export default function SettingsPage() {
   const { user, setAuth, token } = useAuthStore();
   const { t } = useTranslation();
 
-  const [profileForm, setProfileForm] = useState({ name: user?.name || '', email: user?.email || '' });
+  const rawPhone = user?.phone?.replace('+502', '') || '';
+  const [profileForm, setProfileForm] = useState({ name: user?.name || '', email: user?.email || '', phone: rawPhone });
   const [passwordForm, setPasswordForm] = useState({ current_password: '', password: '' });
   const [profileLoading, setProfileLoading] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
@@ -26,7 +27,8 @@ export default function SettingsPage() {
     setProfileError('');
     setProfileSuccess(false);
     try {
-      const res = await api.put('/user/profile', profileForm);
+      const payload = { ...profileForm, phone: profileForm.phone ? `+502${profileForm.phone}` : '' };
+      const res = await api.put('/user/profile', payload);
       setAuth(res.data, token!);
       setProfileSuccess(true);
       setTimeout(() => setProfileSuccess(false), 3000);
@@ -96,6 +98,21 @@ export default function SettingsPage() {
                 onChange={e => setProfileForm({ ...profileForm, email: e.target.value })}
                 className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 font-medium focus:ring-2 focus:ring-[#ff5000] focus:border-[#ff5000] outline-none transition-colors text-sm"
               />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-1">Teléfono</label>
+              <div className="flex">
+                <span className="inline-flex items-center px-3 rounded-l-xl border border-r-0 border-gray-200 bg-gray-100 text-gray-500 text-sm font-bold">🇬🇹 +502</span>
+                <input
+                  type="tel"
+                  value={profileForm.phone}
+                  onChange={e => setProfileForm({ ...profileForm, phone: e.target.value })}
+                  maxLength={8}
+                  pattern="[2-7][0-9]{7}"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-r-xl px-4 py-3 font-medium focus:ring-2 focus:ring-[#ff5000] focus:border-[#ff5000] outline-none transition-colors text-sm"
+                  placeholder="Número de teléfono (opcional)"
+                />
+              </div>
             </div>
             <button
               type="submit"
