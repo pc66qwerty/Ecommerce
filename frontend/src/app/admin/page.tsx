@@ -20,7 +20,7 @@ export default function AdminDashboard() {
 
   const [showProductModal, setShowProductModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
-  const [productForm, setProductForm] = useState({ name: '', slug: '', description: '', price: '', discount_price: '', stock: '', category_id: 1, is_featured: false, images: [] as string[], video_url: '' });
+  const [productForm, setProductForm] = useState({ name: '', slug: '', description: '', price: '', discount_price: '', offer_ends_at: '', stock: '', category_id: 1, is_featured: false, images: [] as string[], video_url: '' });
 
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<any>(null);
@@ -213,13 +213,14 @@ export default function AdminDashboard() {
 
   const openAddModal = () => {
       setEditingProduct(null);
-      setProductForm({ name: '', slug: '', description: '', price: '', discount_price: '', stock: '', category_id: categories[0]?.id || 1, is_featured: false, images: [''], video_url: '' });
+      setProductForm({ name: '', slug: '', description: '', price: '', discount_price: '', offer_ends_at: '', stock: '', category_id: categories[0]?.id || 1, is_featured: false, images: [''], video_url: '' });
       setShowProductModal(true);
   };
 
   const openEditModal = (p: any) => {
       setEditingProduct(p);
-      setProductForm({ name: p.name, slug: p.slug, description: p.description, price: p.price, discount_price: p.discount_price || '', stock: p.stock, category_id: p.category_id, is_featured: p.is_featured, images: p.images || [], video_url: p.video_url || '' });
+      const endsAt = p.offer_ends_at ? new Date(p.offer_ends_at).toISOString().slice(0, 16) : '';
+      setProductForm({ name: p.name, slug: p.slug, description: p.description, price: p.price, discount_price: p.discount_price || '', offer_ends_at: endsAt, stock: p.stock, category_id: p.category_id, is_featured: p.is_featured, images: p.images || [], video_url: p.video_url || '' });
       setShowProductModal(true);
   };
 
@@ -431,6 +432,17 @@ export default function AdminDashboard() {
 
   const removeSlide = (index: number) => {
     if (carouselSlides.length > 1) setCarouselSlides(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleClearAllDiscounts = async () => {
+    if (!confirm('¿Quitar el descuento de TODOS los productos? Esta acción no se puede deshacer.')) return;
+    try {
+      await api.post('/admin/clear-discounts');
+      loadData();
+      alert('Descuentos eliminados correctamente.');
+    } catch (err: any) {
+      alert(`Error: ${err.response?.data?.message || 'No se pudo limpiar los descuentos.'}`);
+    }
   };
 
   const handleSaveWhatsapp = async () => {
@@ -754,7 +766,10 @@ export default function AdminDashboard() {
              <div className="p-5 border-b border-gray-100 bg-gray-50 space-y-3">
                <div className="flex justify-between items-center">
                  <h3 className="font-extrabold text-gray-900">Control de Inventario <span className="text-gray-400 font-normal text-sm">({filteredProducts.length})</span></h3>
-                 <button onClick={openAddModal} className="bg-[#111] text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm hover:bg-[#ff5000] transition-colors">+ Agregar Producto</button>
+                 <div className="flex gap-2">
+                   <button onClick={handleClearAllDiscounts} className="bg-orange-50 border border-orange-200 text-orange-600 text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm hover:bg-orange-100 transition-colors">Limpiar Descuentos</button>
+                   <button onClick={openAddModal} className="bg-[#111] text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm hover:bg-[#ff5000] transition-colors">+ Agregar Producto</button>
+                 </div>
                </div>
                <div className="relative">
                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -1058,6 +1073,9 @@ export default function AdminDashboard() {
                             <div><label className="text-xs font-bold block mb-1 text-gray-700">Precio (Q)</label><input required type="number" step="0.01" value={productForm.price} onChange={e=>setProductForm({...productForm, price: e.target.value})} className="w-full bg-gray-100 border border-gray-300 text-gray-900 rounded-lg p-2.5 text-sm outline-none focus:border-[#ff5000] focus:ring-1 focus:ring-[#ff5000]" /></div>
                             <div><label className="text-xs font-bold block mb-1 text-gray-700">Precio con Descuento (Q) <span className="text-gray-400 font-normal">Opcional</span></label><input type="number" step="0.01" min="0" value={productForm.discount_price} onChange={e=>setProductForm({...productForm, discount_price: e.target.value})} className="w-full bg-gray-100 border border-gray-300 text-gray-900 rounded-lg p-2.5 text-sm outline-none focus:border-[#ff5000] focus:ring-1 focus:ring-[#ff5000]" placeholder="Dejar vacío si no aplica" /></div>
                         </div>
+                        {productForm.discount_price && (
+                          <div><label className="text-xs font-bold block mb-1 text-gray-700">⏰ Oferta válida hasta <span className="text-gray-400 font-normal">Opcional — si no pones fecha, el descuento no expira</span></label><input type="datetime-local" value={productForm.offer_ends_at} onChange={e=>setProductForm({...productForm, offer_ends_at: e.target.value})} className="w-full bg-gray-100 border border-gray-300 text-gray-900 rounded-lg p-2.5 text-sm outline-none focus:border-[#ff5000] focus:ring-1 focus:ring-[#ff5000]" /></div>
+                        )}
                         <div><label className="text-xs font-bold block mb-1 text-gray-700">Stock</label><input required type="number" value={productForm.stock} onChange={e=>setProductForm({...productForm, stock: e.target.value})} className="w-full bg-gray-100 border border-gray-300 text-gray-900 rounded-lg p-2.5 text-sm outline-none focus:border-[#ff5000] focus:ring-1 focus:ring-[#ff5000]" /></div>
                         <div>
                             <label className="text-xs font-bold block mb-1 text-gray-700">Categoría</label>

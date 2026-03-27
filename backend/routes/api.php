@@ -99,5 +99,11 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     // Image Upload (Cloudinary)
     Route::post('/admin/upload', [UploadController::class, 'upload']);
 
+    // Clear all discounts
+    Route::post('/admin/clear-discounts', function () {
+        \App\Models\Product::query()->update(['discount_price' => null, 'offer_ends_at' => null]);
+        return response()->json(['message' => 'Descuentos eliminados correctamente.']);
+    });
+
 
 });

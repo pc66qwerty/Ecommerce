@@ -89,7 +89,12 @@ export default function Home() {
   const isFiltering = selectedCategory !== null || query.trim() !== '' || discountedOnly;
   const hasActiveFilters = sortBy !== 'newest' || priceMin !== '' || priceMax !== '' || inStockOnly;
   const clearFilters = () => { setSortBy('newest'); setPriceMin(''); setPriceMax(''); setInStockOnly(false); };
-  const discountedCount = useMemo(() => products.filter(p => p.discount_price && p.discount_price > 0).length, [products]);
+  const discountedProducts = useMemo(() => products.filter(p => p.discount_price && p.discount_price > 0), [products]);
+  const discountedCount = discountedProducts.length;
+  const nearestExpiry = useMemo(() => {
+    const dates = discountedProducts.filter(p => p.offer_ends_at).map(p => p.offer_ends_at as string);
+    return dates.length > 0 ? dates.sort()[0] : null;
+  }, [discountedProducts]);
 
   return (
     <div className="bg-gray-50 min-h-screen pb-20">
@@ -114,7 +119,7 @@ export default function Home() {
 
         {/* Flash sale countdown */}
         <div className="mt-6">
-          <FlashSaleCountdown discountedCount={discountedCount} onShowDiscounted={() => { setDiscountedOnly(true); document.getElementById('productos')?.scrollIntoView({ behavior: 'smooth' }); }} onExpire={() => setDiscountedOnly(false)} />
+          <FlashSaleCountdown discountedCount={discountedCount} nearestExpiry={nearestExpiry} onShowDiscounted={() => { setDiscountedOnly(true); document.getElementById('productos')?.scrollIntoView({ behavior: 'smooth' }); }} onExpire={() => setDiscountedOnly(false)} />
         </div>
 
         {/* Filters bar */}

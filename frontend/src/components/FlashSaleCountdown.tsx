@@ -1,28 +1,36 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Zap } from 'lucide-react';
 
-function getSecondsUntilMidnight() {
-  const now = new Date();
-  const midnight = new Date();
-  midnight.setHours(24, 0, 0, 0);
-  return Math.floor((midnight.getTime() - now.getTime()) / 1000);
+function getSecondsUntil(target: Date) {
+  return Math.max(0, Math.floor((target.getTime() - Date.now()) / 1000));
 }
 
 function pad(n: number) { return String(n).padStart(2, '0'); }
 
-export default function FlashSaleCountdown({ discountedCount, onShowDiscounted, onExpire }: { discountedCount: number; onShowDiscounted?: () => void; onExpire?: () => void }) {
-  const [seconds, setSeconds] = useState(getSecondsUntilMidnight());
+export default function FlashSaleCountdown({
+  discountedCount,
+  nearestExpiry,
+  onShowDiscounted,
+  onExpire,
+}: {
+  discountedCount: number;
+  nearestExpiry?: string | null;
+  onShowDiscounted?: () => void;
+  onExpire?: () => void;
+}) {
+  const target = nearestExpiry ? new Date(nearestExpiry) : (() => { const d = new Date(); d.setHours(24,0,0,0); return d; })();
+  const [seconds, setSeconds] = useState(() => getSecondsUntil(target));
 
   useEffect(() => {
-    const t = setInterval(() => setSeconds(s => {
-      if (s <= 1) { onExpire?.(); return 0; }
-      return s - 1;
-    }), 1000);
+    const t = setInterval(() => {
+      const s = getSecondsUntil(target);
+      setSeconds(s);
+      if (s === 0) { onExpire?.(); clearInterval(t); }
+    }, 1000);
     return () => clearInterval(t);
-  }, [onExpire]);
+  }, [target.getTime()]);
 
   if (discountedCount === 0 || seconds === 0) return null;
 
@@ -50,7 +58,7 @@ export default function FlashSaleCountdown({ discountedCount, onShowDiscounted, 
           ].map((unit, i) => (
             <div key={i} className="flex items-center gap-1.5">
               {i > 0 && <span className="text-[#ff5000] font-black text-lg">:</span>}
-              <div className="bg-white/10 rounded-lg px-2.5 py-1.5 text-center min-w-[44px]">
+              <div className="bg-white/10 rounded-lg px-2.5 py-1.5 text-center min-w-11">
                 <p className="text-xl font-black tabular-nums">{unit.value}</p>
                 <p className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">{unit.label}</p>
               </div>

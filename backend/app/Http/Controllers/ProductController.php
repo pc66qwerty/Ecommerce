@@ -7,16 +7,30 @@ use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
+    private function expireDiscounts($products)
+    {
+        $now = now();
+        return $products->map(function ($p) use ($now) {
+            if ($p->offer_ends_at && $p->offer_ends_at <= $now) {
+                $p->discount_price = null;
+                $p->offer_ends_at = null;
+            }
+            return $p;
+        });
+    }
+
     public function index(Request $request)
     {
         $query = Product::with('category')->orderBy('created_at', 'desc');
 
         if ($request->has('page')) {
             $perPage = min((int) $request->get('per_page', 20), 100);
-            return response()->json($query->paginate($perPage));
+            $paginated = $query->paginate($perPage);
+            $paginated->setCollection($this->expireDiscounts($paginated->getCollection()));
+            return response()->json($paginated);
         }
 
-        return response()->json($query->get());
+        return response()->json($this->expireDiscounts($query->get()));
     }
 
     public function categories()
@@ -27,6 +41,10 @@ class ProductController extends Controller
     public function show($id)
     {
         $product = Product::with('category', 'reviews.user')->findOrFail($id);
+        if ($product->offer_ends_at && $product->offer_ends_at <= now()) {
+            $product->discount_price = null;
+            $product->offer_ends_at = null;
+        }
         return response()->json($product);
     }
 
@@ -43,6 +61,7 @@ class ProductController extends Controller
             'specs' => 'nullable|array',
             'is_featured' => 'boolean',
             'discount_price' => 'nullable|numeric|min:0',
+            'offer_ends_at' => 'nullable|date',
             'video_url' => 'nullable|url',
         ]);
 
@@ -65,6 +84,7 @@ class ProductController extends Controller
             'specs' => 'nullable|array',
             'is_featured' => 'sometimes|boolean',
             'discount_price' => 'nullable|numeric|min:0',
+            'offer_ends_at' => 'nullable|date',
             'video_url' => 'nullable|url',
         ]);
 

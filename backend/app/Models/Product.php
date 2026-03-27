@@ -10,7 +10,7 @@ class Product extends Model
     use HasFactory;
 
     protected $fillable = [
-        'category_id', 'name', 'slug', 'description', 'price', 'discount_price', 'stock', 'is_featured', 'images', 'specs', 'video_url'
+        'category_id', 'name', 'slug', 'description', 'price', 'discount_price', 'offer_ends_at', 'stock', 'is_featured', 'images', 'specs', 'video_url'
     ];
 
     protected $casts = [
@@ -19,6 +19,7 @@ class Product extends Model
         'is_featured' => 'boolean',
         'price' => 'float',
         'discount_price' => 'float',
+        'offer_ends_at' => 'datetime',
     ];
 
     protected $appends = ['average_rating', 'reviews_count', 'image_url'];
