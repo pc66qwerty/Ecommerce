@@ -105,11 +105,14 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
         if ($secret !== 'reset2026mian') {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
-        \Illuminate\Support\Facades\DB::table('wishlists')->delete();
+        \Illuminate\Support\Facades\DB::table('reviews')->delete();
+        \Illuminate\Support\Facades\DB::table('coupon_usages')->delete();
         \Illuminate\Support\Facades\DB::table('order_items')->delete();
+        \Illuminate\Support\Facades\DB::table('order_statuses')->delete();
         \Illuminate\Support\Facades\DB::table('orders')->delete();
+        \Illuminate\Support\Facades\DB::table('cart_items')->delete();
+        \Illuminate\Support\Facades\DB::table('carts')->delete();
         \Illuminate\Support\Facades\DB::table('coupons')->delete();
-        \Illuminate\Support\Facades\DB::table('product_images')->delete();
         \Illuminate\Support\Facades\DB::table('products')->delete();
         \Illuminate\Support\Facades\DB::table('categories')->delete();
         \App\Models\User::where('role', '!=', 'admin')->delete();
