@@ -128,7 +128,8 @@ export default function CheckoutPage() {
         localStorage.setItem('last_order_reference', referenceNumber);
       }
 
-      const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '50254922665';
+      let whatsappNumber = '50254922665';
+      try { const waRes = await api.get('/settings/whatsapp'); whatsappNumber = waRes.data.whatsapp_number || whatsappNumber; } catch (_) {}
       const productList = items
         .map((i) => `- ${i.quantity}x ${i.name} (Q${Number(i.price).toFixed(2)})`)
         .join('\n');

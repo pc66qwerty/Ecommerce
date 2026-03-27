@@ -985,7 +985,7 @@ export default function AdminDashboard() {
                 <MessageCircle size={18} className="text-green-500" />
                 <h3 className="font-extrabold text-gray-900 text-lg">Número de WhatsApp</h3>
               </div>
-              <p className="text-xs text-gray-400 font-medium mb-4">Este número se usa para notificar a los clientes sobre sus pedidos. Incluye el código de país, ej: <span className="font-mono text-gray-600">50212345678</span></p>
+              <p className="text-xs text-gray-400 font-medium mb-4">Este es el número al que se redirigen los pedidos cuando un cliente hace checkout. Incluye el código de país sin el +, ej: <span className="font-mono text-gray-600">50212345678</span></p>
               <div className="flex gap-3">
                 <input
                   type="tel"

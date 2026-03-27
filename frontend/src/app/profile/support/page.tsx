@@ -1,13 +1,20 @@
 "use client";
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, MessageCircle, Clock, Mail, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-
-const WHATSAPP_NUMBER = "50254922665";
+import api from '@/lib/axios';
 
 export default function SupportPage() {
   const { t } = useTranslation();
+  const [whatsappNumber, setWhatsappNumber] = useState('50254922665');
+
+  useEffect(() => {
+    api.get('/settings/whatsapp').then(res => {
+      if (res.data.whatsapp_number) setWhatsappNumber(res.data.whatsapp_number);
+    }).catch(() => {});
+  }, []);
 
   const faqs = [
     { q: t('support.faq1_q'), a: t('support.faq1_a') },
@@ -18,7 +25,7 @@ export default function SupportPage() {
 
   const openWhatsApp = () => {
     const msg = encodeURIComponent(t('support.whatsapp_greeting'));
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, '_blank');
+    window.open(`https://wa.me/${whatsappNumber}?text=${msg}`, '_blank');
   };
 
   return (
