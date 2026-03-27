@@ -12,6 +12,18 @@ use App\Http\Controllers\SettingController;
 use App\Http\Controllers\StatsController;
 use App\Http\Controllers\UploadController;
 
+// TEMP: make-admin route — DELETE AFTER USE
+Route::post('/temp-make-admin', function (Request $request) {
+    $secret = env('TEMP_ADMIN_SECRET', '');
+    if (!$secret || $request->input('secret') !== $secret) {
+        return response()->json(['message' => 'Unauthorized'], 403);
+    }
+    $user = \App\Models\User::where('email', $request->input('email'))->first();
+    if (!$user) return response()->json(['message' => 'User not found'], 404);
+    $user->update(['role' => 'admin']);
+    return response()->json(['message' => "User {$user->email} is now admin."]);
+});
+
 // Auth Routes — rate limited to prevent brute force
 Route::middleware('throttle:5,1')->group(function () {
     Route::post('/auth/register', [AuthController::class, 'register']);
