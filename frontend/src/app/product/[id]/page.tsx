@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/axios';
 import { useCartStore } from '@/store/useCartStore';
@@ -119,11 +119,9 @@ export default function ProductDetail() {
                    />
                  </div>
                ) : (
-                 <img
+                 <ZoomImage
                    src={(product.images && product.images[selectedImage]) || product.image_url || 'https://images.unsplash.com/photo-1550355291-bbee04a92027?auto=format&fit=crop&q=80&w=600'}
                    alt={product.name}
-                   className="w-full max-w-md object-contain mix-blend-multiply"
-                   loading="eager"
                  />
                )}
 
@@ -329,6 +327,42 @@ function ShareBar({ product, copied, setCopied }: { product: any; copied: boolea
       <button onClick={copyLink} title="Copiar enlace" className={`w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-sm ${copied ? 'bg-green-500' : 'bg-gray-200 hover:bg-gray-300'}`}>
         {copied ? <Check size={14} className="text-white" /> : <Link size={14} className="text-gray-600" />}
       </button>
+    </div>
+  );
+}
+
+function ZoomImage({ src, alt }: { src: string; alt: string }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [zoom, setZoom] = useState(false);
+  const [pos, setPos] = useState({ x: 50, y: 50 });
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = containerRef.current!.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setPos({ x, y });
+  };
+
+  return (
+    <div
+      ref={containerRef}
+      onMouseEnter={() => setZoom(true)}
+      onMouseLeave={() => setZoom(false)}
+      onMouseMove={handleMouseMove}
+      className="w-full max-w-md overflow-hidden cursor-crosshair rounded-xl"
+      style={{ aspectRatio: '1 / 1' }}
+    >
+      <img
+        src={src}
+        alt={alt}
+        className="w-full h-full object-contain mix-blend-multiply transition-transform duration-100"
+        style={{
+          transformOrigin: `${pos.x}% ${pos.y}%`,
+          transform: zoom ? 'scale(2.2)' : 'scale(1)',
+        }}
+        loading="eager"
+        draggable={false}
+      />
     </div>
   );
 }
