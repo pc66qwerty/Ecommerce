@@ -12,16 +12,21 @@ export default function ProfilePage() {
   const router = useRouter();
   const { t } = useTranslation();
   const [orders, setOrders] = useState<any[]>([]);
+  const [couponsCount, setCouponsCount] = useState(0);
   const [loadingData, setLoadingData] = useState(false);
   const { user, isAuthenticated, isLoading, logout } = useAuthStore();
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
         setLoadingData(true);
-        api.get('/my-orders')
-           .then(res => setOrders(res.data))
-           .catch(err => console.error(err))
-           .finally(() => setLoadingData(false));
+        Promise.all([
+          api.get('/my-orders'),
+          api.get('/my-coupons'),
+        ]).then(([ordersRes, couponsRes]) => {
+          setOrders(ordersRes.data);
+          setCouponsCount(couponsRes.data.length);
+        }).catch(err => console.error(err))
+          .finally(() => setLoadingData(false));
     }
   }, [isLoading, isAuthenticated]);
 
@@ -59,13 +64,8 @@ export default function ProfilePage() {
       <div className="max-w-3xl mx-auto px-4 -mt-8 relative z-10">
         <div className="bg-white rounded-2xl shadow-sm p-4 flex justify-around text-center border border-gray-100">
           <div className="flex flex-col items-center">
-            <span className="text-xl font-black text-gray-900">12</span>
+            <span className="text-xl font-black text-gray-900">{couponsCount}</span>
             <span className="text-[11px] text-gray-500 font-semibold uppercase tracking-wider mt-1">{t('profile.coupons')}</span>
-          </div>
-          <div className="w-px bg-gray-100"></div>
-          <div className="flex flex-col items-center">
-            <span className="text-xl font-black text-gray-900">5</span>
-            <span className="text-[11px] text-gray-500 font-semibold uppercase tracking-wider mt-1">{t('profile.following')}</span>
           </div>
           <div className="w-px bg-gray-100"></div>
           <div className="flex flex-col items-center">
