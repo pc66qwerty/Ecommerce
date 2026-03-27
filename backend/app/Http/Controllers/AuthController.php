@@ -121,7 +121,7 @@ class AuthController extends Controller
 
     public function allUsers()
     {
-        $users = User::latest()->get();
+        $users = User::latest()->get()->makeHidden(['password', 'remember_token']);
         return response()->json($users);
     }
 

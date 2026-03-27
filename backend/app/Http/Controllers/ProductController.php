@@ -43,6 +43,7 @@ class ProductController extends Controller
             'specs' => 'nullable|array',
             'is_featured' => 'boolean',
             'discount_price' => 'nullable|numeric|min:0',
+            'video_url' => 'nullable|url',
         ]);
 
         $product = Product::create($validated);
@@ -64,6 +65,7 @@ class ProductController extends Controller
             'specs' => 'nullable|array',
             'is_featured' => 'sometimes|boolean',
             'discount_price' => 'nullable|numeric|min:0',
+            'video_url' => 'nullable|url',
         ]);
 
         $product->update($validated);

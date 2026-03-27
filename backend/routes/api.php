@@ -10,6 +10,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CouponController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\StatsController;
+use App\Http\Controllers\UploadController;
 
 // Auth Routes — rate limited to prevent brute force
 Route::middleware('throttle:5,1')->group(function () {
@@ -31,7 +32,7 @@ Route::put('/cart/update', [CartController::class, 'update']);
 Route::delete('/cart/remove/{cartItemId}', [CartController::class, 'remove']);
 
 // Public Order Routes
-Route::post('/orders', [OrderController::class, 'submitOrder']);
+Route::middleware('throttle:10,1')->post('/orders', [OrderController::class, 'submitOrder']);
 Route::get('/orders/track/{reference}', [OrderController::class, 'trackOrder']);
 
 // Public Settings Routes
@@ -39,7 +40,7 @@ Route::get('/settings/carousel', [SettingController::class, 'getCarousel']);
 
 // Public Coupon Routes
 Route::get('/coupons/public', [CouponController::class, 'publicList']);
-Route::post('/coupons/validate', [CouponController::class, 'validate']);
+Route::middleware('throttle:20,1')->post('/coupons/validate', [CouponController::class, 'validate']);
 
 // Protected User Routes (Customer & Admin)
 Route::middleware('auth:sanctum')->group(function () {
@@ -92,4 +93,7 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
 
     // Admin Stats
     Route::get('/admin/stats', [StatsController::class, 'index']);
+
+    // Image Upload (Cloudinary)
+    Route::post('/admin/upload', [UploadController::class, 'upload']);
 });
