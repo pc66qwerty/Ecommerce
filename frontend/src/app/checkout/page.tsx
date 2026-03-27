@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCartStore } from '@/store/useCartStore';
 import api from '@/lib/axios';
 import {
@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
+import { useAuthStore } from '@/store/useAuthStore';
 
 const STEPS = ['Carrito', 'Envío', 'Confirmar'] as const;
 type Step = 0 | 1 | 2;
@@ -26,11 +27,19 @@ type Step = 0 | 1 | 2;
 export default function CheckoutPage() {
   const { t } = useTranslation();
   const { items, clearCart, updateQuantity, removeItem } = useCartStore();
+  const { user } = useAuthStore();
 
   const [step, setStep] = useState<Step>(0);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({ name: '', phone: '', address: '', city: '' });
   const [formErrors, setFormErrors] = useState<Partial<typeof formData>>({});
+
+  useEffect(() => {
+    if (user?.phone) {
+      const digits = user.phone.replace('+502', '').replace(/\D/g, '');
+      setFormData(prev => ({ ...prev, phone: digits }));
+    }
+  }, [user]);
 
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
@@ -83,6 +92,7 @@ export default function CheckoutPage() {
     const errors: Partial<typeof formData> = {};
     if (!formData.name.trim()) errors.name = 'Requerido';
     if (!formData.phone.trim()) errors.phone = 'Requerido';
+    else if (!/^\d{8}$/.test(formData.phone.trim())) errors.phone = 'Debe ser un número de 8 dígitos';
     if (!formData.address.trim()) errors.address = 'Requerido';
     if (!formData.city.trim()) errors.city = 'Requerido';
     setFormErrors(errors);
@@ -116,7 +126,7 @@ export default function CheckoutPage() {
       const payload: any = {
         products: items.map((i) => ({ product_id: i.product_id, quantity: i.quantity })),
         total: activeFinalTotal,
-        address: `${formData.address}, ${formData.city} (Nombre: ${formData.name}, Tel: ${formData.phone})`,
+        address: `${formData.address}, ${formData.city} (Nombre: ${formData.name}, Tel: +502${formData.phone})`,
       };
       if (activeCoupon?.code) payload.coupon_code = activeCoupon.code;
 
@@ -137,7 +147,7 @@ export default function CheckoutPage() {
         ? `\nCupón: ${activeCoupon.code} (-Q${activeDiscount.toFixed(2)})`
         : '';
       const rawMessage =
-        `Hola, quiero realizar un pedido:\n\nNombre: ${formData.name}\nTeléfono: ${formData.phone}\nRef: ${referenceNumber}\n\nProductos:\n${productList}${discountLine}\n\nTotal: Q${activeFinalTotal.toFixed(2)}\n\nDirección: ${formData.address}, ${formData.city}\n\nPor favor confirmar disponibilidad.`;
+        `Hola, quiero realizar un pedido:\n\nNombre: ${formData.name}\nTeléfono: +502${formData.phone}\nRef: ${referenceNumber}\n\nProductos:\n${productList}${discountLine}\n\nTotal: Q${activeFinalTotal.toFixed(2)}\n\nDirección: ${formData.address}, ${formData.city}\n\nPor favor confirmar disponibilidad.`;
 
       const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(rawMessage)}`;
       clearCart();
@@ -321,7 +331,6 @@ export default function CheckoutPage() {
                 {(
                   [
                     { key: 'name', label: t('checkout.full_name'), type: 'text' },
-                    { key: 'phone', label: t('checkout.phone'), type: 'tel' },
                     { key: 'address', label: t('checkout.address'), type: 'text' },
                     { key: 'city', label: t('checkout.city'), type: 'text' },
                   ] as { key: keyof typeof formData; label: string; type: string }[]
@@ -345,6 +354,35 @@ export default function CheckoutPage() {
                     )}
                   </div>
                 ))}
+
+                {/* Phone field with +502 prefix and numeric validation */}
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">{t('checkout.phone')}</label>
+                  <div className="flex">
+                    <span className={`inline-flex items-center px-3 rounded-l-xl border border-r-0 text-sm font-bold ${formErrors.phone ? 'border-red-400 bg-red-50 text-red-400' : 'border-gray-200 bg-gray-100 text-gray-500'}`}>
+                      🇬🇹 +502
+                    </span>
+                    <input
+                      type="tel"
+                      inputMode="numeric"
+                      maxLength={8}
+                      value={formData.phone}
+                      onChange={(e) => {
+                        const digits = e.target.value.replace(/\D/g, '').slice(0, 8);
+                        setFormData({ ...formData, phone: digits });
+                        setFormErrors({ ...formErrors, phone: '' });
+                      }}
+                      placeholder="12345678"
+                      className={`w-full bg-gray-50 border rounded-r-xl px-4 py-3 font-medium focus:ring-2 focus:ring-[#ff5000] focus:border-[#ff5000] outline-none transition-colors
+                        ${formErrors.phone ? 'border-red-400 bg-red-50' : 'border-gray-200'}`}
+                    />
+                  </div>
+                  {formErrors.phone && (
+                    <p className="text-xs text-red-500 font-bold mt-1 flex items-center gap-1">
+                      <X size={11} /> {formErrors.phone}
+                    </p>
+                  )}
+                </div>
               </div>
 
               {/* Coupon section */}
@@ -438,7 +476,7 @@ export default function CheckoutPage() {
               {/* Shipping summary */}
               <div className="bg-gray-50 rounded-2xl px-4 py-3 text-sm space-y-0.5">
                 <p className="font-black text-gray-800">{formData.name}</p>
-                <p className="text-gray-600 font-medium">{formData.phone}</p>
+                <p className="text-gray-600 font-medium">+502 {formData.phone}</p>
                 <p className="text-gray-600 font-medium">
                   {formData.address}, {formData.city}
                 </p>
