@@ -1,9 +1,10 @@
 FROM php:8.2-cli
 
-# Install system dependencies
+# Install system dependencies + PostgreSQL support
 RUN apt-get update && apt-get install -y \
     git curl zip unzip libpng-dev libonig-dev libxml2-dev libzip-dev \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip \
+    libpq-dev \
+    && docker-php-ext-install pdo_mysql pdo_pgsql pgsql mbstring exif pcntl bcmath gd zip \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install Composer
@@ -11,17 +12,13 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
 
-# Copy dependency files first (better layer caching)
 COPY composer.json composer.lock ./
 RUN composer install --no-dev --optimize-autoloader --no-scripts
 
-# Copy rest of the application
 COPY . .
 
-# Generate optimized autoload
 RUN composer dump-autoload --optimize
 
-# Set permissions
 RUN mkdir -p storage/logs storage/framework/cache storage/framework/sessions \
         storage/framework/views bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
