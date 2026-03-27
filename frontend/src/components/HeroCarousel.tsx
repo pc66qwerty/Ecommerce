@@ -15,7 +15,7 @@ interface Slide {
 const defaultSlides: Slide[] = [
   {
     image: 'https://images.unsplash.com/photo-1621252178351-5121b6d9da25?auto=format&fit=crop&q=80&w=1200',
-    badge: '🔥 Oferta Relámpago',
+    badge: '🔥 ¡Solo por Hoy!',
     title: "Ilumina tu\nCamino",
     subtitle: 'LEDs de alta potencia 6000K para cualquier vehículo. Instalación en minutos.',
   },

@@ -34,7 +34,7 @@ export default function FlashSaleCountdown({ discountedCount }: { discountedCoun
             <Zap size={16} className="text-white" fill="white" />
           </span>
           <div>
-            <p className="text-xs font-black uppercase tracking-widest text-[#ff5000]">¡Oferta Relámpago!</p>
+            <p className="text-xs font-black uppercase tracking-widest text-[#ff5000]">🔥 ¡Solo por Hoy!</p>
             <p className="text-[11px] text-gray-300 font-medium">{discountedCount} productos con descuento — termina hoy</p>
           </div>
         </div>

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import api from '@/lib/axios';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
+import { useAuthStore } from '@/store/useAuthStore';
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
@@ -12,6 +13,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { t } = useTranslation();
+  const { setAuth } = useAuthStore();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -29,8 +31,8 @@ export default function RegisterPage() {
       const res = await api.post('/auth/register', formData);
 
       if (res.data.access_token) {
-        localStorage.setItem('auth_token', res.data.access_token);
         api.defaults.headers.common['Authorization'] = `Bearer ${res.data.access_token}`;
+        setAuth(res.data.user, res.data.access_token);
         router.push('/');
       }
     } catch (err: any) {
