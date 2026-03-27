@@ -99,23 +99,5 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     // Image Upload (Cloudinary)
     Route::post('/admin/upload', [UploadController::class, 'upload']);
 
-    // TEMP: Reset all data except admin user
-    Route::post('/admin/reset-data', function (Request $request) {
-        $secret = $request->input('secret');
-        if ($secret !== 'reset2026mian') {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-        \Illuminate\Support\Facades\DB::table('reviews')->delete();
-        \Illuminate\Support\Facades\DB::table('coupon_usages')->delete();
-        \Illuminate\Support\Facades\DB::table('order_items')->delete();
-        \Illuminate\Support\Facades\DB::table('order_statuses')->delete();
-        \Illuminate\Support\Facades\DB::table('orders')->delete();
-        \Illuminate\Support\Facades\DB::table('cart_items')->delete();
-        \Illuminate\Support\Facades\DB::table('carts')->delete();
-        \Illuminate\Support\Facades\DB::table('coupons')->delete();
-        \Illuminate\Support\Facades\DB::table('products')->delete();
-        \Illuminate\Support\Facades\DB::table('categories')->delete();
-        \App\Models\User::where('role', '!=', 'admin')->delete();
-        return response()->json(['message' => 'Datos eliminados correctamente. Solo queda el admin.']);
-    });
+
 });
