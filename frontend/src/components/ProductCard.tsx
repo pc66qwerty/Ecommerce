@@ -67,16 +67,6 @@ export default function ProductCard({ product }: { product: any }) {
             <span>{t('product.almost_gone', { stock: product.stock })}</span>
           </div>
         )}
-        {/* Hover info overlay */}
-        <div className="absolute inset-0 bg-black/75 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3 pointer-events-none">
-          {product.description && (
-            <p className="text-white text-[11px] font-medium line-clamp-3 leading-relaxed">{product.description}</p>
-          )}
-          <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/20">
-            <span className="text-[10px] text-gray-300 font-bold">Stock: {product.stock} uds.</span>
-            {product.category?.name && <span className="text-[10px] bg-white/20 text-white px-2 py-0.5 rounded-full font-bold">{product.category.name}</span>}
-          </div>
-        </div>
       </Link>
 
       <div className="p-3 sm:p-4 flex flex-col flex-grow relative">

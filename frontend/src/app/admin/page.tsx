@@ -581,7 +581,7 @@ export default function AdminDashboard() {
                     return (
                       <div key={s.status}>
                         <div className="flex justify-between text-xs font-bold text-gray-700 mb-1.5">
-                          <span>{s.status}</span>
+                          <span>{statusLabelsES[s.status] ?? s.status}</span>
                           <span className="text-gray-500">{s.count} pedido{s.count !== 1 ? 's' : ''} · {pct}%</span>
                         </div>
                         <div className="w-full bg-gray-100 rounded-full h-2">
@@ -811,7 +811,7 @@ export default function AdminDashboard() {
         {activeTab === 'categories' && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="p-5 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
-              <h3 className="font-extrabold text-gray-900">Categories</h3>
+              <h3 className="font-extrabold text-gray-900">Categorías</h3>
               <button onClick={openAddCategoryModal} className="bg-[#111] text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm hover:bg-[#ff5000] transition-colors">+ Agregar Categoría</button>
             </div>
             <div className="overflow-x-auto">
@@ -884,7 +884,7 @@ export default function AdminDashboard() {
                   {pagedCoupons.map((c: any) => (
                     <tr key={c.id} className="hover:bg-gray-50/50 transition-colors">
                       <td className="p-4 font-black text-gray-800 font-mono tracking-wider">{c.code}</td>
-                      <td className="p-4 text-gray-600 font-medium capitalize">{c.discount_type}</td>
+                      <td className="p-4 text-gray-600 font-medium">{c.discount_type === 'percentage' ? 'Porcentaje' : 'Monto fijo'}</td>
                       <td className="p-4 font-bold text-[#ff5000]">{c.discount_type === 'percentage' ? `${c.discount_value}%` : `Q${c.discount_value}`}</td>
                       <td className="p-4 text-gray-500 font-medium">{c.min_purchase > 0 ? `Q${c.min_purchase}` : '—'}</td>
                       <td className="p-4 text-gray-500 font-medium">{c.uses_count}{c.max_uses ? ` / ${c.max_uses}` : ''}</td>
