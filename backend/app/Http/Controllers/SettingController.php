@@ -30,6 +30,26 @@ class SettingController extends Controller
         return response()->json(['message' => 'Número actualizado correctamente']);
     }
 
+    public function getTrustBar()
+    {
+        $row = DB::table('settings')->where('key', 'trust_bar')->first();
+        $defaults = ['Envío Gratis', '90 días de retorno', 'Igualamos Precios'];
+        return response()->json($row ? json_decode($row->value, true) : $defaults);
+    }
+
+    public function updateTrustBar(Request $request)
+    {
+        $request->validate([
+            'items' => 'required|array|size:3',
+            'items.*' => 'required|string|max:60',
+        ]);
+        DB::table('settings')->updateOrInsert(
+            ['key' => 'trust_bar'],
+            ['value' => json_encode($request->items), 'updated_at' => now()]
+        );
+        return response()->json(['message' => 'Barra de confianza actualizada.']);
+    }
+
     public function updateCarousel(Request $request)
     {
         $request->validate([

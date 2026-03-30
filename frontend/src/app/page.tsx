@@ -32,9 +32,14 @@ export default function Home() {
   const { t } = useTranslation();
   const recentlyViewed = useRecentlyViewed();
   const [discountedOnly, setDiscountedOnly] = useState(false);
+  const [trustBar, setTrustBar] = useState(['Envío Gratis', '90 días de retorno', 'Igualamos Precios']);
 
   // Track latest fetch to discard stale responses
   const fetchIdRef = useRef(0);
+
+  useEffect(() => {
+    api.get('/settings/trust-bar').then(res => { if (Array.isArray(res.data)) setTrustBar(res.data); }).catch(() => {});
+  }, []);
 
   const buildParams = useCallback((page: number) => {
     const params: Record<string, any> = { page, per_page: 20, sort: sortBy };
@@ -97,9 +102,9 @@ export default function Home() {
       {/* Trust bar */}
       <div className="bg-white border-b border-gray-100 py-3 mb-6 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 flex justify-between items-center text-[10px] md:text-sm font-bold text-gray-600">
-          <div className="flex items-center space-x-1.5"><Truck size={16} className="text-[#ff5000]" /><span>{t('home.guarantees.shipping')}</span></div>
-          <div className="flex items-center space-x-1.5"><ShieldCheck size={16} className="text-[#ff5000]" /><span>{t('home.guarantees.returns')}</span></div>
-          <div className="flex items-center space-x-1.5"><Tag size={16} className="text-[#ff5000]" /><span>{t('home.guarantees.price')}</span></div>
+          <div className="flex items-center space-x-1.5"><Truck size={16} className="text-[#ff5000]" /><span>{trustBar[0]}</span></div>
+          <div className="flex items-center space-x-1.5"><ShieldCheck size={16} className="text-[#ff5000]" /><span>{trustBar[1]}</span></div>
+          <div className="flex items-center space-x-1.5"><Tag size={16} className="text-[#ff5000]" /><span>{trustBar[2]}</span></div>
         </div>
       </div>
 

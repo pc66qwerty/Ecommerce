@@ -45,7 +45,11 @@ export default function AdminDashboard() {
 
   const [showAdminConfirm, setShowAdminConfirm] = useState(false);
   const [adminConfirmPassword, setAdminConfirmPassword] = useState('');
-  const [pendingToggleUser, setPendingToggleUser] = useState<any>(null);
+  const [pendingAction, setPendingAction] = useState<(() => Promise<void>) | null>(null);
+  const [pendingActionMessage, setPendingActionMessage] = useState('');
+
+  const [trustBar, setTrustBar] = useState(['Envío Gratis', '90 días de retorno', 'Igualamos Precios']);
+  const [trustBarSaving, setTrustBarSaving] = useState(false);
 
   const emptySlide = { image: '', badge: '', title: '', subtitle: '' };
   const [carouselSlides, setCarouselSlides] = useState([{ ...emptySlide }, { ...emptySlide }, { ...emptySlide }]);
@@ -81,26 +85,28 @@ export default function AdminDashboard() {
   const loadData = async () => {
     setLoadingData(true);
     try {
-      const [oRes, uRes, pRes, cRes, cRes2, carRes, statsRes, waRes, rvRes] = await Promise.allSettled([
+      const [oRes, uRes, pRes, cRes, cRes2, carRes, statsRes, waRes, rvRes, tbRes] = await Promise.allSettled([
         api.get('/admin/orders'),
         api.get('/admin/users'),
-        api.get('/products'),
+        api.get('/products', { params: { per_page: 500 } }),
         api.get('/categories'),
         api.get('/admin/coupons'),
         api.get('/settings/carousel'),
         api.get('/admin/stats'),
         api.get('/settings/whatsapp'),
         api.get('/admin/reviews'),
+        api.get('/settings/trust-bar'),
       ]);
       if (oRes.status === 'fulfilled') setOrders(oRes.value.data);
       if (uRes.status === 'fulfilled') setUsersList(uRes.value.data);
-      if (pRes.status === 'fulfilled') setProducts(pRes.value.data);
+      if (pRes.status === 'fulfilled') setProducts(pRes.value.data.data || pRes.value.data);
       if (cRes.status === 'fulfilled') setCategories(cRes.value.data);
       if (cRes2.status === 'fulfilled') setCoupons(cRes2.value.data);
       if (carRes.status === 'fulfilled' && Array.isArray(carRes.value.data) && carRes.value.data.length > 0) setCarouselSlides(carRes.value.data);
       if (statsRes.status === 'fulfilled') setStats(statsRes.value.data);
       if (waRes.status === 'fulfilled') setWhatsappNumber(waRes.value.data.whatsapp_number || '');
       if (rvRes.status === 'fulfilled') setReviews(rvRes.value.data);
+      if (tbRes.status === 'fulfilled' && Array.isArray(tbRes.value.data)) setTrustBar(tbRes.value.data);
     } catch (err: any) {
       alert('Error al cargar los datos de administración');
     } finally {
@@ -186,11 +192,14 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleResetPassword = async () => {
-    if (!newPassword.trim() || newPassword.length < 8) {
-      alert('La contraseña debe tener al menos 8 caracteres.');
-      return;
-    }
+  const requireAdminConfirm = (action: () => Promise<void>, message: string) => {
+    setPendingAction(() => action);
+    setPendingActionMessage(message);
+    setAdminConfirmPassword('');
+    setShowAdminConfirm(true);
+  };
+
+  const doResetPassword = async () => {
     setPasswordSaving(true);
     try {
       await api.put(`/admin/users/${editingUser.id}/password`, { password: newPassword });
@@ -201,6 +210,17 @@ export default function AdminDashboard() {
     } finally {
       setPasswordSaving(false);
     }
+  };
+
+  const handleResetPassword = () => {
+    if (!newPassword.trim() || newPassword.length < 8) {
+      alert('La contraseña debe tener al menos 8 caracteres.');
+      return;
+    }
+    requireAdminConfirm(
+      doResetPassword,
+      `Para cambiar la contraseña de "${editingUser?.name}", ingresa tu contraseña de administrador.`
+    );
   };
 
   const handleCreateUser = async (e: React.FormEvent) => {
@@ -215,16 +235,6 @@ export default function AdminDashboard() {
     }
   };
 
-  const toggleUserActive = (u: any) => {
-    if (u.role === 'admin' && u.is_active !== false) {
-      setPendingToggleUser(u);
-      setAdminConfirmPassword('');
-      setShowAdminConfirm(true);
-    } else {
-      doToggleUserActive(u);
-    }
-  };
-
   const doToggleUserActive = async (u: any) => {
     try {
       await api.put(`/admin/users/${u.id}`, { is_active: !u.is_active });
@@ -232,11 +242,19 @@ export default function AdminDashboard() {
     } catch (err) { alert('Error al actualizar el estado del usuario'); }
   };
 
+  const toggleUserActive = (u: any) => {
+    requireAdminConfirm(
+      () => doToggleUserActive(u),
+      `Para ${u.is_active ? 'deshabilitar' : 'habilitar'} a "${u.name}", ingresa tu contraseña de administrador.`
+    );
+  };
+
   const handleAdminConfirm = async () => {
     try {
       await api.post('/admin/verify-password', { password: adminConfirmPassword });
       setShowAdminConfirm(false);
-      doToggleUserActive(pendingToggleUser);
+      if (pendingAction) await pendingAction();
+      setPendingAction(null);
     } catch (err: any) {
       alert(err.response?.data?.message || 'Contraseña incorrecta.');
     }
@@ -504,6 +522,18 @@ export default function AdminDashboard() {
       alert(`Error: ${err.response?.data?.message || 'No se pudo guardar el número.'}`);
     } finally {
       setWhatsappSaving(false);
+    }
+  };
+
+  const handleSaveTrustBar = async () => {
+    setTrustBarSaving(true);
+    try {
+      await api.put('/admin/settings/trust-bar', { items: trustBar });
+      alert('¡Barra de confianza actualizada!');
+    } catch (err: any) {
+      alert(`Error: ${err.response?.data?.message || 'No se pudo guardar.'}`);
+    } finally {
+      setTrustBarSaving(false);
     }
   };
 
@@ -1087,6 +1117,36 @@ export default function AdminDashboard() {
 
         {activeTab === 'settings' && (
           <div className="space-y-6">
+            {/* Trust bar editor */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 max-w-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <Tag size={18} className="text-[#ff5000]" />
+                <h3 className="font-extrabold text-gray-900 text-lg">Barra de confianza</h3>
+              </div>
+              <p className="text-xs text-gray-400 font-medium mb-4">Los 3 textos que aparecen debajo del carrusel principal.</p>
+              <div className="space-y-3 mb-4">
+                {(['Ícono Camión', 'Ícono Escudo', 'Ícono Etiqueta'] as const).map((label, i) => (
+                  <div key={i}>
+                    <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block mb-1">{label}</label>
+                    <input
+                      type="text"
+                      value={trustBar[i]}
+                      onChange={e => setTrustBar(prev => prev.map((v, idx) => idx === i ? e.target.value : v))}
+                      maxLength={60}
+                      className="w-full bg-gray-100 border border-gray-300 text-gray-900 rounded-xl p-3 text-sm outline-none focus:border-[#ff5000] focus:ring-1 focus:ring-[#ff5000]"
+                    />
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={handleSaveTrustBar}
+                disabled={trustBarSaving}
+                className="bg-[#ff5000] hover:bg-orange-600 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-colors disabled:opacity-50"
+              >
+                {trustBarSaving ? 'Guardando...' : 'Guardar'}
+              </button>
+            </div>
+
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 max-w-lg">
               <div className="flex items-center gap-2 mb-5">
                 <MessageCircle size={18} className="text-green-500" />
@@ -1118,7 +1178,7 @@ export default function AdminDashboard() {
           <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
               <h3 className="font-black text-gray-900 text-lg mb-2">Confirmar acción</h3>
-              <p className="text-sm text-gray-500 mb-4">Para deshabilitar una cuenta admin, ingresa tu contraseña.</p>
+              <p className="text-sm text-gray-500 mb-4">{pendingActionMessage}</p>
               <input
                 type="password"
                 value={adminConfirmPassword}
