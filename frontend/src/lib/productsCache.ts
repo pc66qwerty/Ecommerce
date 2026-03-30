@@ -24,7 +24,7 @@ export async function getProductsFirstPage(): Promise<any[]> {
   try {
     const res = await api.get('/products', { params: { per_page: 20 } });
     firstPageCache = res.data.data || [];
-    return firstPageCache;
+    return firstPageCache!;
   } catch {
     return [];
   }

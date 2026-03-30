@@ -294,17 +294,28 @@ export default function AdminDashboard() {
   const handleSaveProduct = async (e: React.FormEvent) => {
       e.preventDefault();
       try {
-          let res;
+          // Sanitize empty strings → null so backend nullable validation passes
+          const payload = {
+              ...productForm,
+              discount_price: productForm.discount_price !== '' ? productForm.discount_price : null,
+              offer_ends_at: productForm.offer_ends_at || null,
+              video_url: productForm.video_url || null,
+              images: productForm.images.filter((img: string) => img.trim()),
+          };
           if (editingProduct) {
-              res = await api.put(`/products/${editingProduct.id}`, productForm);
+              await api.put(`/products/${editingProduct.id}`, payload);
           } else {
-              res = await api.post('/products', productForm);
+              await api.post('/products', payload);
           }
-              alert(editingProduct ? '¡Producto actualizado!' : '¡Producto registrado exitosamente!');
+          alert(editingProduct ? '¡Producto actualizado!' : '¡Producto registrado exitosamente!');
           setShowProductModal(false);
           loadData();
       } catch (err: any) {
-          alert(`Error: ${err.response?.data?.message || 'Verifica los campos o que el slug no esté duplicado.'}`);
+          const errors = err.response?.data?.errors;
+          const msg = errors
+              ? Object.values(errors).flat().join('\n')
+              : err.response?.data?.message || 'Verifica los campos o que el slug no esté duplicado.';
+          alert(`Error: ${msg}`);
       }
   };
 

@@ -9,7 +9,7 @@ import { ShoppingCart, Star, Shield, Truck, RotateCcw, AlertTriangle, PlayCircle
 import { useTranslation } from 'react-i18next';
 import ProductCard from '@/components/ProductCard';
 import { saveRecentlyViewed } from '@/hooks/useRecentlyViewed';
-import { getProductsCache } from '@/lib/productsCache';
+import { searchProducts } from '@/lib/productsCache';
 
 function toEmbedUrl(url: string): string | null {
   if (!url) return null;
@@ -50,9 +50,12 @@ export default function ProductDetail() {
         saveRecentlyViewed(p);
         // Load related products from cache (no extra network request)
         if (p.category_id) {
-          getProductsCache().then(all => {
-            setRelated(all.filter((x: any) => x.category_id === p.category_id && x.id !== p.id).slice(0, 5));
-          });
+          api.get('/products', { params: { category_id: p.category_id, per_page: 6 } })
+            .then(res => {
+              const all = res.data.data || [];
+              setRelated(all.filter((x: any) => x.id !== p.id).slice(0, 5));
+            })
+            .catch(() => {});
         }
       } catch (err) {
         // product not found
