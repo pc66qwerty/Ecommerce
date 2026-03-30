@@ -1206,7 +1206,7 @@ export default function AdminDashboard() {
 
         {/* Admin Password Confirm Modal */}
         {showAdminConfirm && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
               <h3 className="font-black text-gray-900 text-lg mb-2">Confirmar acción</h3>
               <p className="text-sm text-gray-500 mb-4">{pendingActionMessage}</p>
@@ -1229,7 +1229,7 @@ export default function AdminDashboard() {
 
         {/* Edit Review Modal */}
         {editingReview && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="font-black text-gray-900 text-lg">Editar Reseña</h3>
@@ -1261,7 +1261,7 @@ export default function AdminDashboard() {
 
         {/* Category Form Modal */}
         {showCategoryModal && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
               <div className="p-5 border-b flex justify-between items-center bg-gray-100">
                 <h3 className="font-black text-lg text-gray-900">{editingCategory ? 'Editar Categoría' : 'Agregar Categoría'}</h3>
@@ -1297,7 +1297,7 @@ export default function AdminDashboard() {
 
         {/* Product Form Modal */}
         {showProductModal && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
              <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
                 <div className="p-5 border-b flex justify-between items-center bg-gray-100">
                     <h3 className="font-black text-lg text-gray-900">{editingProduct ? 'Editar Producto' : 'Agregar Producto'}</h3>
@@ -1415,7 +1415,7 @@ export default function AdminDashboard() {
 
         {/* Coupon Form Modal */}
         {showCouponModal && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
               <div className="p-5 border-b flex justify-between items-center bg-gray-100">
                 <h3 className="font-black text-lg text-gray-900">{editingCoupon ? 'Editar Cupón' : 'Agregar Cupón'}</h3>
@@ -1474,7 +1474,7 @@ export default function AdminDashboard() {
 
         {/* Edit User Modal */}
         {showUserModal && editingUser && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
               <div className="p-5 border-b flex justify-between items-center bg-gray-100">
                 <h3 className="font-black text-lg text-gray-900">Editar Usuario</h3>
@@ -1534,7 +1534,7 @@ export default function AdminDashboard() {
 
         {/* Create User Modal */}
         {showCreateUserModal && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
               <div className="p-5 border-b flex justify-between items-center bg-gray-100">
                 <h3 className="font-black text-lg text-gray-900">Agregar Nuevo Usuario</h3>
