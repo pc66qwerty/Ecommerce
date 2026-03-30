@@ -162,15 +162,17 @@ export default function ProductDetail() {
               </h1>
 
               {/* Ratings Overview */}
-              <div className="flex items-center space-x-2 mb-6">
-                <div className="flex text-[#ff5000]">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} size={16} fill={i < Math.round(product.average_rating || 5) ? 'currentColor' : 'none'} color={i < Math.round(product.average_rating || 5) ? 'currentColor' : '#ff5000'} />
-                  ))}
+              {product.reviews_count > 0 && (
+                <div className="flex items-center space-x-2 mb-6">
+                  <div className="flex text-[#ff5000]">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} size={16} fill={i < Math.round(product.average_rating) ? 'currentColor' : 'none'} color={i < Math.round(product.average_rating) ? 'currentColor' : '#ff5000'} />
+                    ))}
+                  </div>
+                  <span className="text-sm font-bold text-gray-700">{Number(product.average_rating).toFixed(1)}</span>
+                  <span className="text-sm font-medium text-gray-400">({product.reviews_count} {t('product.reviews')})</span>
                 </div>
-                <span className="text-sm font-bold text-gray-700">{product.average_rating ? Number(product.average_rating).toFixed(1) : '5.0'}</span>
-                <span className="text-sm font-medium text-gray-400 underline decoration-dashed cursor-pointer">({product.reviews_count || 128} {t('product.reviews')})</span>
-              </div>
+              )}
 
               {/* Pricing */}
               <div className="mb-8 border-b border-gray-100 pb-8 relative">
@@ -189,22 +191,27 @@ export default function ProductDetail() {
               </div>
 
               {/* Features List */}
-              <div className="space-y-3 mb-10 text-sm font-semibold text-gray-700">
-                {product.features && product.features.length > 0 ? (
-                  product.features.map((f: string, i: number) => (
-                    <div key={i} className="flex items-center">
-                      <CheckCircle2 size={18} className="text-green-500 mr-3 shrink-0" />
-                      {f}
-                    </div>
-                  ))
-                ) : (
-                  <>
-                    <div className="flex items-center"><Shield size={18} className="text-green-500 mr-3" /> {t('product.warranty')}</div>
-                    <div className="flex items-center"><Truck size={18} className="text-[#ff5000] mr-3" /> {t('product.express')}</div>
-                    <div className="flex items-center"><RotateCcw size={18} className="text-blue-500 mr-3" /> {t('product.returns')}</div>
-                  </>
-                )}
-              </div>
+              {(() => {
+                const f = product.features;
+                const hasCustom = f && typeof f === 'object' && !Array.isArray(f) && (f.warranty || f.free_shipping || f.returns);
+                return (
+                  <div className="space-y-3 mb-10 text-sm font-semibold text-gray-700">
+                    {hasCustom ? (
+                      <>
+                        {f.warranty && <div className="flex items-center"><Shield size={18} className="text-green-500 mr-3 shrink-0" /> {f.warranty} de garantía</div>}
+                        {f.free_shipping && <div className="flex items-center"><Truck size={18} className="text-[#ff5000] mr-3 shrink-0" /> Envío gratis</div>}
+                        {f.returns && <div className="flex items-center"><RotateCcw size={18} className="text-blue-500 mr-3 shrink-0" /> Devoluciones sin costo</div>}
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex items-center"><Shield size={18} className="text-green-500 mr-3" /> {t('product.warranty')}</div>
+                        <div className="flex items-center"><Truck size={18} className="text-[#ff5000] mr-3" /> {t('product.express')}</div>
+                        <div className="flex items-center"><RotateCcw size={18} className="text-blue-500 mr-3" /> {t('product.returns')}</div>
+                      </>
+                    )}
+                  </div>
+                );
+              })()}
 
               <div className="mt-auto hidden md:block space-y-3">
                   <button

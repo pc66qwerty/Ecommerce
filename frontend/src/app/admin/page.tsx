@@ -20,7 +20,8 @@ export default function AdminDashboard() {
 
   const [showProductModal, setShowProductModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
-  const [productForm, setProductForm] = useState({ name: '', slug: '', description: '', price: '', discount_price: '', offer_ends_at: '', stock: '', category_id: 1, is_featured: false, images: [] as string[], video_url: '', features: [] as string[] });
+  const emptyFeatures = { warranty: '', free_shipping: false, returns: false };
+  const [productForm, setProductForm] = useState({ name: '', slug: '', description: '', price: '', discount_price: '', offer_ends_at: '', stock: '', category_id: 1, is_featured: false, images: [] as string[], video_url: '', features: { ...emptyFeatures } });
 
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<any>(null);
@@ -260,14 +261,15 @@ export default function AdminDashboard() {
 
   const openAddModal = () => {
       setEditingProduct(null);
-      setProductForm({ name: '', slug: '', description: '', price: '', discount_price: '', offer_ends_at: '', stock: '', category_id: categories[0]?.id || 1, is_featured: false, images: [''], video_url: '', features: [] });
+      setProductForm({ name: '', slug: '', description: '', price: '', discount_price: '', offer_ends_at: '', stock: '', category_id: categories[0]?.id || 1, is_featured: false, images: [''], video_url: '', features: { ...emptyFeatures } });
       setShowProductModal(true);
   };
 
   const openEditModal = (p: any) => {
       setEditingProduct(p);
       const endsAt = p.offer_ends_at ? new Date(p.offer_ends_at).toISOString().slice(0, 16) : '';
-      setProductForm({ name: p.name, slug: p.slug, description: p.description, price: p.price, discount_price: p.discount_price || '', offer_ends_at: endsAt, stock: p.stock, category_id: p.category_id, is_featured: p.is_featured, images: p.images || [], video_url: p.video_url || '', features: p.features || [] });
+      const pf = p.features && typeof p.features === 'object' && !Array.isArray(p.features) ? p.features : emptyFeatures;
+      setProductForm({ name: p.name, slug: p.slug, description: p.description, price: p.price, discount_price: p.discount_price || '', offer_ends_at: endsAt, stock: p.stock, category_id: p.category_id, is_featured: p.is_featured, images: p.images || [], video_url: p.video_url || '', features: { warranty: pf.warranty || '', free_shipping: !!pf.free_shipping, returns: !!pf.returns } });
       setShowProductModal(true);
   };
 
@@ -1230,17 +1232,31 @@ export default function AdminDashboard() {
                         </div>
                         <div><label className="text-xs font-bold block mb-1 text-gray-700">Descripción</label><textarea required value={productForm.description} onChange={e=>setProductForm({...productForm, description: e.target.value})} className="w-full bg-gray-100 border border-gray-300 text-gray-900 rounded-lg p-2.5 text-sm outline-none focus:border-[#ff5000] focus:ring-1 focus:ring-[#ff5000] h-20" /></div>
                         <div>
-                          <div className="flex items-center justify-between mb-1">
-                            <label className="text-xs font-bold text-gray-700">Características del producto <span className="text-gray-400 font-normal">(garantía, envío, etc.)</span></label>
-                            <button type="button" onClick={() => setProductForm({...productForm, features: [...productForm.features, '']})} className="text-[10px] font-bold text-[#ff5000] hover:underline">+ Agregar</button>
-                          </div>
-                          {productForm.features.length === 0 && <p className="text-[11px] text-gray-400 italic">Sin características — se mostrarán las predeterminadas.</p>}
-                          {productForm.features.map((f, i) => (
-                            <div key={i} className="flex gap-2 mb-1.5">
-                              <input value={f} onChange={e => { const arr = [...productForm.features]; arr[i] = e.target.value; setProductForm({...productForm, features: arr}); }} className="flex-1 bg-gray-100 border border-gray-300 text-gray-900 rounded-lg p-2 text-sm outline-none focus:border-[#ff5000]" placeholder="Ej: 1 año de garantía" />
-                              <button type="button" onClick={() => setProductForm({...productForm, features: productForm.features.filter((_,j) => j !== i)})} className="text-red-400 hover:text-red-600 font-bold text-xs px-2">✕</button>
+                          <label className="text-xs font-bold block mb-2 text-gray-700">Características del producto</label>
+                          <div className="space-y-2 bg-gray-50 rounded-xl p-3 border border-gray-200">
+                            {/* Garantía */}
+                            <div className="flex items-center gap-3 flex-wrap">
+                              <label className="flex items-center gap-2 cursor-pointer select-none">
+                                <input type="checkbox" checked={!!productForm.features.warranty} onChange={e => setProductForm({...productForm, features: {...productForm.features, warranty: e.target.checked ? '1 año' : ''}})} className="accent-[#ff5000] w-4 h-4" />
+                                <span className="text-sm font-bold text-gray-700">🛡️ Garantía</span>
+                              </label>
+                              {productForm.features.warranty && (
+                                <select value={productForm.features.warranty} onChange={e => setProductForm({...productForm, features: {...productForm.features, warranty: e.target.value}})} className="bg-white border border-gray-300 text-gray-800 rounded-lg px-2 py-1 text-xs font-bold outline-none focus:border-[#ff5000]">
+                                  {['3 meses','6 meses','1 año','2 años','3 años'].map(v => <option key={v} value={v}>{v}</option>)}
+                                </select>
+                              )}
                             </div>
-                          ))}
+                            {/* Envío gratis */}
+                            <label className="flex items-center gap-2 cursor-pointer select-none">
+                              <input type="checkbox" checked={!!productForm.features.free_shipping} onChange={e => setProductForm({...productForm, features: {...productForm.features, free_shipping: e.target.checked}})} className="accent-[#ff5000] w-4 h-4" />
+                              <span className="text-sm font-bold text-gray-700">🚚 Envío Gratis</span>
+                            </label>
+                            {/* Devoluciones */}
+                            <label className="flex items-center gap-2 cursor-pointer select-none">
+                              <input type="checkbox" checked={!!productForm.features.returns} onChange={e => setProductForm({...productForm, features: {...productForm.features, returns: e.target.checked}})} className="accent-[#ff5000] w-4 h-4" />
+                              <span className="text-sm font-bold text-gray-700">↩️ Devoluciones</span>
+                            </label>
+                          </div>
                         </div>
                         <div>
                           <div className="flex items-center justify-between mb-1">
