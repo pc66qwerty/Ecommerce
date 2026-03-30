@@ -201,8 +201,7 @@ export default function AdminDashboard() {
     setShowUserModal(true);
   };
 
-  const handleUpdateUser = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const doUpdateUser = async () => {
     try {
       await api.put(`/admin/users/${editingUser.id}`, userForm);
       setShowUserModal(false);
@@ -210,6 +209,14 @@ export default function AdminDashboard() {
     } catch (err: any) {
       alert(`Error: ${err.response?.data?.message || 'No se pudo actualizar el usuario.'}`);
     }
+  };
+
+  const handleUpdateUser = (e: React.FormEvent) => {
+    e.preventDefault();
+    requireAdminConfirm(
+      doUpdateUser,
+      `Para guardar los cambios de "${editingUser?.name}", ingresa tu contraseña de administrador.`
+    );
   };
 
   const requireAdminConfirm = (action: () => Promise<void>, message: string) => {
@@ -1206,7 +1213,7 @@ export default function AdminDashboard() {
 
         {/* Admin Password Confirm Modal */}
         {showAdminConfirm && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4">
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
               <h3 className="font-black text-gray-900 text-lg mb-2">Confirmar acción</h3>
               <p className="text-sm text-gray-500 mb-4">{pendingActionMessage}</p>
