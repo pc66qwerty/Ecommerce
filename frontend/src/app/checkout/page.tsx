@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useCartStore } from '@/store/useCartStore';
+import { useRouter } from 'next/navigation';
 import api from '@/lib/axios';
 import {
   ShieldCheck,
@@ -27,7 +28,8 @@ type Step = 0 | 1 | 2;
 export default function CheckoutPage() {
   const { t } = useTranslation();
   const { items, clearCart, updateQuantity, removeItem } = useCartStore();
-  const { user } = useAuthStore();
+  const { user, isAuthenticated, isLoading } = useAuthStore();
+  const router = useRouter();
 
   const [step, setStep] = useState<Step>(0);
   const [loading, setLoading] = useState(false);
@@ -100,6 +102,10 @@ export default function CheckoutPage() {
   };
 
   const goNext = () => {
+    if (step === 0 && !isAuthenticated && !isLoading) {
+      router.push('/auth/login?redirect=/checkout');
+      return;
+    }
     if (step === 1 && !validateForm()) return;
     setStep((prev) => (prev + 1) as Step);
   };

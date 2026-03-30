@@ -18,6 +18,46 @@ Route::middleware('throttle:5,1')->group(function () {
     Route::post('/auth/login', [AuthController::class, 'login']);
 });
 
+// Google OAuth
+Route::middleware('throttle:10,1')->post('/auth/google', function (\Illuminate\Http\Request $request) {
+    $request->validate(['access_token' => 'required|string']);
+
+    $response = \Illuminate\Support\Facades\Http::withToken($request->access_token)
+        ->get('https://www.googleapis.com/oauth2/v3/userinfo');
+
+    if ($response->failed()) {
+        return response()->json(['message' => 'Token de Google inválido.'], 401);
+    }
+
+    $googleUser = $response->json();
+    $email = $googleUser['email'] ?? null;
+    if (!$email) {
+        return response()->json(['message' => 'No se pudo obtener el email de Google.'], 401);
+    }
+
+    $user = \App\Models\User::firstOrCreate(
+        ['email' => $email],
+        [
+            'name'     => $googleUser['name'] ?? $email,
+            'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(32)),
+            'google_id' => $googleUser['sub'] ?? null,
+        ]
+    );
+
+    // Update google_id if it was missing (existing user logging in with Google for the first time)
+    if (!$user->google_id && isset($googleUser['sub'])) {
+        $user->update(['google_id' => $googleUser['sub']]);
+    }
+
+    $token = $user->createToken('auth_token')->plainTextToken;
+
+    return response()->json([
+        'access_token' => $token,
+        'token_type'   => 'Bearer',
+        'user'         => $user,
+    ]);
+});
+
 // Public Product Routes
 Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/{id}', [ProductController::class, 'show']);

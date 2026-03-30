@@ -8,6 +8,7 @@ import I18nProvider from "@/components/I18nProvider";
 import AuthProvider from "@/components/AuthProvider";
 import ToastContainer from "@/components/ToastContainer";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import GoogleProvider from "@/components/GoogleProvider";
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -34,6 +35,7 @@ export default function RootLayout({
         className={`${outfit.variable} font-sans antialiased min-h-screen flex flex-col`}
       >
         <I18nProvider>
+            <GoogleProvider>
             <ToastContainer />
             <AuthProvider>
               <Navbar />
@@ -44,6 +46,7 @@ export default function RootLayout({
               </main>
               <BottomNav />
             </AuthProvider>
+            </GoogleProvider>
         </I18nProvider>
       </body>
     </html>
