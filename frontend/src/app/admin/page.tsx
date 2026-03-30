@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import api from '@/lib/axios';
 import { useRouter } from 'next/navigation';
 import { Package, Users, Settings, Tag, Grid, CheckCircle2, Image as ImageIcon, BarChart3, Download, Search, FileSpreadsheet, FileText, MessageCircle, Star } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 import * as XLSX from 'xlsx';
 import ImageInput from '@/components/ImageInput';
+import EmojiPicker from '@/components/EmojiPicker';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -50,6 +51,25 @@ export default function AdminDashboard() {
 
   const [trustBar, setTrustBar] = useState(['Envío Gratis', '90 días de retorno', 'Igualamos Precios']);
   const [trustBarSaving, setTrustBarSaving] = useState(false);
+
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
+
+  const insertEmoji = (emoji: string) => {
+    const el = descriptionRef.current;
+    if (!el) {
+      setProductForm(f => ({ ...f, description: f.description + emoji }));
+      return;
+    }
+    const start = el.selectionStart ?? el.value.length;
+    const end   = el.selectionEnd   ?? el.value.length;
+    const next  = el.value.slice(0, start) + emoji + el.value.slice(end);
+    setProductForm(f => ({ ...f, description: next }));
+    // Restore cursor after React re-render
+    requestAnimationFrame(() => {
+      el.focus();
+      el.setSelectionRange(start + emoji.length, start + emoji.length);
+    });
+  };
 
   const emptySlide = { image: '', badge: '', title: '', subtitle: '' };
   const [carouselSlides, setCarouselSlides] = useState([{ ...emptySlide }, { ...emptySlide }, { ...emptySlide }]);
@@ -1301,7 +1321,20 @@ export default function AdminDashboard() {
                                 {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                             </select>
                         </div>
-                        <div><label className="text-xs font-bold block mb-1 text-gray-700">Descripción</label><textarea required value={productForm.description} onChange={e=>setProductForm({...productForm, description: e.target.value})} className="w-full bg-gray-100 border border-gray-300 text-gray-900 rounded-lg p-2.5 text-sm outline-none focus:border-[#ff5000] focus:ring-1 focus:ring-[#ff5000] h-20" /></div>
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="text-xs font-bold text-gray-700">Descripción</label>
+                            <EmojiPicker onPick={insertEmoji} />
+                          </div>
+                          <textarea
+                            ref={descriptionRef}
+                            required
+                            value={productForm.description}
+                            onChange={e => setProductForm({...productForm, description: e.target.value})}
+                            className="w-full bg-gray-100 border border-gray-300 text-gray-900 rounded-lg p-2.5 text-sm outline-none focus:border-[#ff5000] focus:ring-1 focus:ring-[#ff5000] h-28"
+                            placeholder="Ej: ⚡ Faro LED de alta potencia • ✅ Garantía 1 año • 🚚 Envío gratis"
+                          />
+                        </div>
                         <div>
                           <label className="text-xs font-bold block mb-2 text-gray-700">Características del producto</label>
                           <div className="space-y-2 bg-gray-50 rounded-xl p-3 border border-gray-200">
