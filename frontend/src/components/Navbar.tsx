@@ -7,7 +7,7 @@ import { useSearchStore } from '@/store/useSearchStore';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/useAuthStore';
-import { getProductsCache } from '@/lib/productsCache';
+import { searchProducts, getProductsFirstPage } from '@/lib/productsCache';
 
 interface Product { id: number; name: string; image_url?: string; price: string; discount_price?: string; }
 
@@ -19,9 +19,8 @@ function SearchBox({ placeholder }: { placeholder: string }) {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  // Only fetch products when user actually focuses the search
   const handleFocus = () => {
-    getProductsCache(); // lazy-fetch, cached after first call
+    getProductsFirstPage(); // warm the cache, no-op if already loaded
     if (inputValue.trim()) setShowDropdown(true);
   };
 
@@ -29,11 +28,10 @@ function SearchBox({ placeholder }: { placeholder: string }) {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (!inputValue.trim()) { setSuggestions([]); return; }
     debounceRef.current = setTimeout(async () => {
-      const products = await getProductsCache();
-      const q = inputValue.toLowerCase();
-      setSuggestions(products.filter(p => p.name?.toLowerCase().includes(q)).slice(0, 6));
+      const results = await searchProducts(inputValue);
+      setSuggestions(results);
       setShowDropdown(true);
-    }, 250);
+    }, 300);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [inputValue]);
 

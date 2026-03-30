@@ -145,10 +145,14 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
         $review = \App\Models\Review::findOrFail($id);
         $request->validate(['comment' => 'nullable|string', 'rating' => 'required|integer|min:1|max:5']);
         $review->update(['comment' => $request->comment, 'rating' => $request->rating]);
+        \App\Models\Product::refreshRating($review->product_id);
         return response()->json($review);
     });
     Route::delete('/admin/reviews/{id}', function ($id) {
-        \App\Models\Review::findOrFail($id)->delete();
+        $review = \App\Models\Review::findOrFail($id);
+        $productId = $review->product_id;
+        $review->delete();
+        \App\Models\Product::refreshRating($productId);
         return response()->json(['message' => 'Reseña eliminada.']);
     });
 

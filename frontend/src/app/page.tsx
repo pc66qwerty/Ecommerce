@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import ProductCard from '@/components/ProductCard';
 import ProductCardSkeleton from '@/components/ProductCardSkeleton';
 import HeroCarousel from '@/components/HeroCarousel';
@@ -17,6 +17,11 @@ import Link from 'next/link';
 export default function Home() {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
+  const [discountsMeta, setDiscountsMeta] = useState<{ count: number; nearest_expiry: string | null } | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const { query } = useSearchStore();
   const [sortBy, setSortBy] = useState('newest');
@@ -26,75 +31,63 @@ export default function Home() {
   const [showFilters, setShowFilters] = useState(false);
   const { t } = useTranslation();
   const recentlyViewed = useRecentlyViewed();
-  const [visibleCount, setVisibleCount] = useState(12);
   const [discountedOnly, setDiscountedOnly] = useState(false);
 
+  // Track latest fetch to discard stale responses
+  const fetchIdRef = useRef(0);
+
+  const buildParams = useCallback((page: number) => {
+    const params: Record<string, any> = { page, per_page: 20, sort: sortBy };
+    if (selectedCategory) params.category_id = selectedCategory;
+    if (query.trim()) params.search = query.trim();
+    if (priceMin) params.min_price = priceMin;
+    if (priceMax) params.max_price = priceMax;
+    if (inStockOnly) params.in_stock = 1;
+    if (discountedOnly) params.discounted = 1;
+    return params;
+  }, [selectedCategory, query, sortBy, priceMin, priceMax, inStockOnly, discountedOnly]);
+
+  // Fetch page 1 whenever filters change
   useEffect(() => {
-    api.get('/products')
+    const id = ++fetchIdRef.current;
+    setLoading(true);
+    setProducts([]);
+    setCurrentPage(1);
+
+    api.get('/products', { params: buildParams(1) })
       .then(res => {
-        const data = res.data.data || res.data;
+        if (fetchIdRef.current !== id) return; // stale
+        const { data, last_page, total, discounts_meta } = res.data;
         setProducts(data);
-        primeProductsCache(data); // share with Navbar search cache
+        setHasMore(1 < last_page);
+        setTotalCount(total);
+        setDiscountsMeta(discounts_meta);
+        primeProductsCache(data);
       })
       .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+      .finally(() => { if (fetchIdRef.current === id) setLoading(false); });
+  }, [buildParams]);
 
-  const filtered = useMemo(() => {
-    let result = products;
-
-    if (selectedCategory !== null) {
-      result = result.filter(p => p.category_id === selectedCategory);
-    }
-
-    if (query.trim()) {
-      const q = query.toLowerCase();
-      result = result.filter(p =>
-        p.name?.toLowerCase().includes(q) ||
-        p.description?.toLowerCase().includes(q) ||
-        p.category?.name?.toLowerCase().includes(q)
-      );
-    }
-
-    if (inStockOnly) {
-      result = result.filter(p => p.stock > 0);
-    }
-
-    if (discountedOnly) {
-      result = result.filter(p => p.discount_price && p.discount_price > 0);
-    }
-
-    if (priceMin !== '') {
-      result = result.filter(p => (p.discount_price || p.price) >= parseFloat(priceMin));
-    }
-
-    if (priceMax !== '') {
-      result = result.filter(p => (p.discount_price || p.price) <= parseFloat(priceMax));
-    }
-
-    result = [...result].sort((a, b) => {
-      switch (sortBy) {
-        case 'price_asc': return (a.discount_price || a.price) - (b.discount_price || b.price);
-        case 'price_desc': return (b.discount_price || b.price) - (a.discount_price || a.price);
-        case 'rating': return (b.average_rating || 0) - (a.average_rating || 0);
-        default: return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      }
-    });
-
-    return result;
-  }, [products, selectedCategory, query, sortBy, priceMin, priceMax, inStockOnly]);
-
-  useEffect(() => { setVisibleCount(12); }, [selectedCategory, query, sortBy, priceMin, priceMax, inStockOnly]);
+  const loadMore = () => {
+    const nextPage = currentPage + 1;
+    setLoadingMore(true);
+    api.get('/products', { params: buildParams(nextPage) })
+      .then(res => {
+        const { data, last_page } = res.data;
+        setProducts(prev => [...prev, ...data]);
+        setCurrentPage(nextPage);
+        setHasMore(nextPage < last_page);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingMore(false));
+  };
 
   const isFiltering = selectedCategory !== null || query.trim() !== '' || discountedOnly;
   const hasActiveFilters = sortBy !== 'newest' || priceMin !== '' || priceMax !== '' || inStockOnly;
   const clearFilters = () => { setSortBy('newest'); setPriceMin(''); setPriceMax(''); setInStockOnly(false); };
-  const discountedProducts = useMemo(() => products.filter(p => p.discount_price && p.discount_price > 0), [products]);
-  const discountedCount = discountedProducts.length;
-  const nearestExpiry = useMemo(() => {
-    const dates = discountedProducts.filter(p => p.offer_ends_at).map(p => p.offer_ends_at as string);
-    return dates.length > 0 ? dates.sort()[0] : null;
-  }, [discountedProducts]);
+
+  const discountedCount = discountsMeta?.count ?? 0;
+  const nearestExpiry = discountsMeta?.nearest_expiry ?? null;
 
   return (
     <div className="bg-gray-50 min-h-screen pb-20">
@@ -180,9 +173,11 @@ export default function Home() {
             {isFiltering ? (
               <>
                 {query.trim() ? `${t('home.results_for')} "${query}"` : t('home.selected_category')}
-                <span className="bg-gray-200 text-gray-600 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full">
-                  {filtered.length} {t('home.products_count')}
-                </span>
+                {!loading && (
+                  <span className="bg-gray-200 text-gray-600 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full">
+                    {totalCount} {t('home.products_count')}
+                  </span>
+                )}
               </>
             ) : (
               <>
@@ -226,24 +221,25 @@ export default function Home() {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-6">
             {Array.from({ length: 12 }).map((_, i) => <ProductCardSkeleton key={i} />)}
           </div>
-        ) : filtered.length > 0 ? (
+        ) : products.length > 0 ? (
           <>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-6">
-              {filtered.slice(0, visibleCount).map(product => (
+              {products.map(product => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
-            {visibleCount < filtered.length && (
+            {hasMore && (
               <div className="mt-8 flex justify-center">
                 <button
-                  onClick={() => setVisibleCount(v => v + 12)}
-                  className="bg-white border border-gray-200 hover:border-[#ff5000] text-gray-700 hover:text-[#ff5000] font-bold px-8 py-3 rounded-full text-sm transition-all shadow-sm"
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                  className="bg-white border border-gray-200 hover:border-[#ff5000] text-gray-700 hover:text-[#ff5000] font-bold px-8 py-3 rounded-full text-sm transition-all shadow-sm disabled:opacity-50"
                 >
-                  Cargar más ({filtered.length - visibleCount} restantes)
+                  {loadingMore ? 'Cargando...' : `Cargar más (${totalCount - products.length} restantes)`}
                 </button>
               </div>
             )}
-            {visibleCount >= filtered.length && !isFiltering && (
+            {!hasMore && !isFiltering && (
               <div className="py-12 text-center text-sm font-bold text-gray-400">
                 {t('home.end_catalog')}
               </div>
