@@ -62,6 +62,7 @@ class ProductController extends Controller
             'is_featured' => 'boolean',
             'discount_price' => 'nullable|numeric|min:0',
             'offer_ends_at' => 'nullable|date',
+            'features' => 'nullable|array',
             'video_url' => 'nullable|url',
         ]);
 
@@ -85,6 +86,7 @@ class ProductController extends Controller
             'is_featured' => 'sometimes|boolean',
             'discount_price' => 'nullable|numeric|min:0',
             'offer_ends_at' => 'nullable|date',
+            'features' => 'nullable|array',
             'video_url' => 'nullable|url',
         ]);
 

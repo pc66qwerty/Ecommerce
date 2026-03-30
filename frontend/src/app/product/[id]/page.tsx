@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/axios';
 import { useCartStore } from '@/store/useCartStore';
 import { useToastStore } from '@/store/useToastStore';
-import { ShoppingCart, Star, Shield, Truck, RotateCcw, AlertTriangle, PlayCircle, Share2, Link, Check } from 'lucide-react';
+import { ShoppingCart, Star, Shield, Truck, RotateCcw, AlertTriangle, PlayCircle, Share2, Link, Check, CheckCircle2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import ProductCard from '@/components/ProductCard';
 import { saveRecentlyViewed } from '@/hooks/useRecentlyViewed';
@@ -190,9 +190,20 @@ export default function ProductDetail() {
 
               {/* Features List */}
               <div className="space-y-3 mb-10 text-sm font-semibold text-gray-700">
-                  <div className="flex items-center"><Shield size={18} className="text-green-500 mr-3" /> {t('product.warranty')}</div>
-                  <div className="flex items-center"><Truck size={18} className="text-[#ff5000] mr-3" /> {t('product.express')}</div>
-                  <div className="flex items-center"><RotateCcw size={18} className="text-blue-500 mr-3" /> {t('product.returns')}</div>
+                {product.features && product.features.length > 0 ? (
+                  product.features.map((f: string, i: number) => (
+                    <div key={i} className="flex items-center">
+                      <CheckCircle2 size={18} className="text-green-500 mr-3 shrink-0" />
+                      {f}
+                    </div>
+                  ))
+                ) : (
+                  <>
+                    <div className="flex items-center"><Shield size={18} className="text-green-500 mr-3" /> {t('product.warranty')}</div>
+                    <div className="flex items-center"><Truck size={18} className="text-[#ff5000] mr-3" /> {t('product.express')}</div>
+                    <div className="flex items-center"><RotateCcw size={18} className="text-blue-500 mr-3" /> {t('product.returns')}</div>
+                  </>
+                )}
               </div>
 
               <div className="mt-auto hidden md:block space-y-3">

@@ -96,6 +96,32 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     // Admin Stats
     Route::get('/admin/stats', [StatsController::class, 'index']);
 
+    // Admin Reviews
+    Route::get('/admin/reviews', function () {
+        $reviews = \App\Models\Review::with('user', 'product')->latest()->get();
+        return response()->json($reviews);
+    });
+    Route::put('/admin/reviews/{id}', function (\Illuminate\Http\Request $request, $id) {
+        $review = \App\Models\Review::findOrFail($id);
+        $request->validate(['comment' => 'nullable|string', 'rating' => 'required|integer|min:1|max:5']);
+        $review->update(['comment' => $request->comment, 'rating' => $request->rating]);
+        return response()->json($review);
+    });
+    Route::delete('/admin/reviews/{id}', function ($id) {
+        \App\Models\Review::findOrFail($id)->delete();
+        return response()->json(['message' => 'Reseña eliminada.']);
+    });
+
+    // Verify admin password
+    Route::post('/admin/verify-password', function (\Illuminate\Http\Request $request) {
+        $request->validate(['password' => 'required|string']);
+        $user = $request->user();
+        if (!\Illuminate\Support\Facades\Hash::check($request->password, $user->password)) {
+            return response()->json(['message' => 'Contraseña incorrecta.'], 422);
+        }
+        return response()->json(['ok' => true]);
+    });
+
     // Image Upload (Cloudinary)
     Route::post('/admin/upload', [UploadController::class, 'upload']);
 

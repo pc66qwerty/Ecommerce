@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import api from '@/lib/axios';
 import { useRouter } from 'next/navigation';
-import { Package, Users, Settings, Tag, Grid, CheckCircle2, Image as ImageIcon, BarChart3, Download, Search, FileSpreadsheet, FileText, MessageCircle } from 'lucide-react';
+import { Package, Users, Settings, Tag, Grid, CheckCircle2, Image as ImageIcon, BarChart3, Download, Search, FileSpreadsheet, FileText, MessageCircle, Star } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 import * as XLSX from 'xlsx';
 import ImageInput from '@/components/ImageInput';
@@ -20,7 +20,7 @@ export default function AdminDashboard() {
 
   const [showProductModal, setShowProductModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
-  const [productForm, setProductForm] = useState({ name: '', slug: '', description: '', price: '', discount_price: '', offer_ends_at: '', stock: '', category_id: 1, is_featured: false, images: [] as string[], video_url: '' });
+  const [productForm, setProductForm] = useState({ name: '', slug: '', description: '', price: '', discount_price: '', offer_ends_at: '', stock: '', category_id: 1, is_featured: false, images: [] as string[], video_url: '', features: [] as string[] });
 
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<any>(null);
@@ -37,6 +37,14 @@ export default function AdminDashboard() {
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [showCreateUserModal, setShowCreateUserModal] = useState(false);
   const [createUserForm, setCreateUserForm] = useState({ name: '', email: '', password: '', role: 'customer', is_active: true });
+
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [editingReview, setEditingReview] = useState<any>(null);
+  const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' });
+
+  const [showAdminConfirm, setShowAdminConfirm] = useState(false);
+  const [adminConfirmPassword, setAdminConfirmPassword] = useState('');
+  const [pendingToggleUser, setPendingToggleUser] = useState<any>(null);
 
   const emptySlide = { image: '', badge: '', title: '', subtitle: '' };
   const [carouselSlides, setCarouselSlides] = useState([{ ...emptySlide }, { ...emptySlide }, { ...emptySlide }]);
@@ -72,7 +80,7 @@ export default function AdminDashboard() {
   const loadData = async () => {
     setLoadingData(true);
     try {
-      const [oRes, uRes, pRes, cRes, cRes2, carRes, statsRes, waRes] = await Promise.allSettled([
+      const [oRes, uRes, pRes, cRes, cRes2, carRes, statsRes, waRes, rvRes] = await Promise.allSettled([
         api.get('/admin/orders'),
         api.get('/admin/users'),
         api.get('/products'),
@@ -81,6 +89,7 @@ export default function AdminDashboard() {
         api.get('/settings/carousel'),
         api.get('/admin/stats'),
         api.get('/settings/whatsapp'),
+        api.get('/admin/reviews'),
       ]);
       if (oRes.status === 'fulfilled') setOrders(oRes.value.data);
       if (uRes.status === 'fulfilled') setUsersList(uRes.value.data);
@@ -90,6 +99,7 @@ export default function AdminDashboard() {
       if (carRes.status === 'fulfilled' && Array.isArray(carRes.value.data) && carRes.value.data.length > 0) setCarouselSlides(carRes.value.data);
       if (statsRes.status === 'fulfilled') setStats(statsRes.value.data);
       if (waRes.status === 'fulfilled') setWhatsappNumber(waRes.value.data.whatsapp_number || '');
+      if (rvRes.status === 'fulfilled') setReviews(rvRes.value.data);
     } catch (err: any) {
       alert('Error al cargar los datos de administración');
     } finally {
@@ -204,23 +214,60 @@ export default function AdminDashboard() {
     }
   };
 
-  const toggleUserActive = async (u: any) => {
+  const toggleUserActive = (u: any) => {
+    if (u.role === 'admin' && u.is_active !== false) {
+      setPendingToggleUser(u);
+      setAdminConfirmPassword('');
+      setShowAdminConfirm(true);
+    } else {
+      doToggleUserActive(u);
+    }
+  };
+
+  const doToggleUserActive = async (u: any) => {
     try {
       await api.put(`/admin/users/${u.id}`, { is_active: !u.is_active });
       loadData();
     } catch (err) { alert('Error al actualizar el estado del usuario'); }
   };
 
+  const handleAdminConfirm = async () => {
+    try {
+      await api.post('/admin/verify-password', { password: adminConfirmPassword });
+      setShowAdminConfirm(false);
+      doToggleUserActive(pendingToggleUser);
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Contraseña incorrecta.');
+    }
+  };
+
+  const handleDeleteReview = async (id: number) => {
+    if (!confirm('¿Eliminar esta reseña?')) return;
+    try {
+      await api.delete(`/admin/reviews/${id}`);
+      setReviews(prev => prev.filter(r => r.id !== id));
+    } catch (err) { alert('Error al eliminar la reseña'); }
+  };
+
+  const handleSaveReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await api.put(`/admin/reviews/${editingReview.id}`, reviewForm);
+      setReviews(prev => prev.map(r => r.id === editingReview.id ? { ...r, ...reviewForm } : r));
+      setEditingReview(null);
+    } catch (err) { alert('Error al guardar la reseña'); }
+  };
+
   const openAddModal = () => {
       setEditingProduct(null);
-      setProductForm({ name: '', slug: '', description: '', price: '', discount_price: '', offer_ends_at: '', stock: '', category_id: categories[0]?.id || 1, is_featured: false, images: [''], video_url: '' });
+      setProductForm({ name: '', slug: '', description: '', price: '', discount_price: '', offer_ends_at: '', stock: '', category_id: categories[0]?.id || 1, is_featured: false, images: [''], video_url: '', features: [] });
       setShowProductModal(true);
   };
 
   const openEditModal = (p: any) => {
       setEditingProduct(p);
       const endsAt = p.offer_ends_at ? new Date(p.offer_ends_at).toISOString().slice(0, 16) : '';
-      setProductForm({ name: p.name, slug: p.slug, description: p.description, price: p.price, discount_price: p.discount_price || '', offer_ends_at: endsAt, stock: p.stock, category_id: p.category_id, is_featured: p.is_featured, images: p.images || [], video_url: p.video_url || '' });
+      setProductForm({ name: p.name, slug: p.slug, description: p.description, price: p.price, discount_price: p.discount_price || '', offer_ends_at: endsAt, stock: p.stock, category_id: p.category_id, is_featured: p.is_featured, images: p.images || [], video_url: p.video_url || '', features: p.features || [] });
       setShowProductModal(true);
   };
 
@@ -466,6 +513,7 @@ export default function AdminDashboard() {
     { id: 'users', label: 'Usuarios', icon: Users },
     { id: 'coupons', label: 'Cupones', icon: Tag },
     { id: 'carousel', label: 'Carrusel', icon: ImageIcon },
+    { id: 'reviews', label: 'Reseñas', icon: Star },
     { id: 'settings', label: 'Configuración', icon: Settings },
   ];
 
@@ -993,6 +1041,48 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {activeTab === 'reviews' && (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="p-5 border-b border-gray-100 bg-gray-50">
+              <h3 className="font-extrabold text-gray-900">Reseñas de Productos <span className="text-gray-400 font-normal text-sm">({reviews.length})</span></h3>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm whitespace-nowrap">
+                <thead className="bg-white text-gray-400 font-bold uppercase tracking-wider text-[10px] border-b border-gray-100">
+                  <tr>
+                    <th className="p-4">Producto</th>
+                    <th className="p-4">Usuario</th>
+                    <th className="p-4">Calificación</th>
+                    <th className="p-4">Comentario</th>
+                    <th className="p-4">Fecha</th>
+                    <th className="p-4 text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {reviews.map((r: any) => (
+                    <tr key={r.id} className="hover:bg-gray-50/50">
+                      <td className="p-4 font-bold text-gray-800 max-w-32 truncate">{r.product?.name || '—'}</td>
+                      <td className="p-4 text-gray-500 font-medium">{r.user?.name || 'Anónimo'}</td>
+                      <td className="p-4">
+                        <div className="flex text-[#ff5000]">
+                          {[1,2,3,4,5].map(i => <Star key={i} size={12} fill={i <= r.rating ? 'currentColor' : 'none'} />)}
+                        </div>
+                      </td>
+                      <td className="p-4 text-gray-500 font-medium max-w-48 truncate">{r.comment || '—'}</td>
+                      <td className="p-4 text-gray-400 text-xs">{new Date(r.created_at).toLocaleDateString('es-GT')}</td>
+                      <td className="p-4 text-right space-x-2">
+                        <button onClick={() => { setEditingReview(r); setReviewForm({ rating: r.rating, comment: r.comment || '' }); }} className="text-blue-600 hover:underline font-bold text-xs">Editar</button>
+                        <button onClick={() => handleDeleteReview(r.id)} className="text-red-600 hover:underline font-bold text-xs">Eliminar</button>
+                      </td>
+                    </tr>
+                  ))}
+                  {reviews.length === 0 && <tr><td colSpan={6} className="text-center p-10 text-gray-400">No hay reseñas aún.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {activeTab === 'settings' && (
           <div className="space-y-6">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 max-w-lg">
@@ -1017,6 +1107,61 @@ export default function AdminDashboard() {
                   {whatsappSaving ? 'Guardando...' : 'Guardar'}
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Admin Password Confirm Modal */}
+        {showAdminConfirm && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+              <h3 className="font-black text-gray-900 text-lg mb-2">Confirmar acción</h3>
+              <p className="text-sm text-gray-500 mb-4">Para deshabilitar una cuenta admin, ingresa tu contraseña.</p>
+              <input
+                type="password"
+                value={adminConfirmPassword}
+                onChange={e => setAdminConfirmPassword(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleAdminConfirm()}
+                className="w-full bg-gray-100 border border-gray-300 rounded-xl p-3 text-sm outline-none focus:border-[#ff5000] mb-4"
+                placeholder="Tu contraseña actual"
+                autoFocus
+              />
+              <div className="flex gap-3">
+                <button onClick={() => setShowAdminConfirm(false)} className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50">Cancelar</button>
+                <button onClick={handleAdminConfirm} className="flex-1 py-2.5 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700">Confirmar</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Review Modal */}
+        {editingReview && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-black text-gray-900 text-lg">Editar Reseña</h3>
+                <button onClick={() => setEditingReview(null)} className="text-gray-400 hover:text-black font-bold">✕</button>
+              </div>
+              <form onSubmit={handleSaveReview} className="space-y-4">
+                <div>
+                  <label className="text-xs font-bold block mb-1 text-gray-700">Calificación</label>
+                  <div className="flex gap-2">
+                    {[1,2,3,4,5].map(i => (
+                      <button key={i} type="button" onClick={() => setReviewForm(f => ({ ...f, rating: i }))}
+                        className={`text-2xl transition-transform hover:scale-110 ${i <= reviewForm.rating ? 'text-[#ff5000]' : 'text-gray-300'}`}>★</button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-bold block mb-1 text-gray-700">Comentario</label>
+                  <textarea value={reviewForm.comment} onChange={e => setReviewForm(f => ({ ...f, comment: e.target.value }))}
+                    className="w-full bg-gray-100 border border-gray-300 rounded-xl p-3 text-sm outline-none focus:border-[#ff5000] h-24" />
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button type="button" onClick={() => setEditingReview(null)} className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-600">Cancelar</button>
+                  <button type="submit" className="flex-1 py-2.5 rounded-xl bg-[#ff5000] text-white text-sm font-bold">Guardar</button>
+                </div>
+              </form>
             </div>
           </div>
         )}
@@ -1084,6 +1229,19 @@ export default function AdminDashboard() {
                             </select>
                         </div>
                         <div><label className="text-xs font-bold block mb-1 text-gray-700">Descripción</label><textarea required value={productForm.description} onChange={e=>setProductForm({...productForm, description: e.target.value})} className="w-full bg-gray-100 border border-gray-300 text-gray-900 rounded-lg p-2.5 text-sm outline-none focus:border-[#ff5000] focus:ring-1 focus:ring-[#ff5000] h-20" /></div>
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="text-xs font-bold text-gray-700">Características del producto <span className="text-gray-400 font-normal">(garantía, envío, etc.)</span></label>
+                            <button type="button" onClick={() => setProductForm({...productForm, features: [...productForm.features, '']})} className="text-[10px] font-bold text-[#ff5000] hover:underline">+ Agregar</button>
+                          </div>
+                          {productForm.features.length === 0 && <p className="text-[11px] text-gray-400 italic">Sin características — se mostrarán las predeterminadas.</p>}
+                          {productForm.features.map((f, i) => (
+                            <div key={i} className="flex gap-2 mb-1.5">
+                              <input value={f} onChange={e => { const arr = [...productForm.features]; arr[i] = e.target.value; setProductForm({...productForm, features: arr}); }} className="flex-1 bg-gray-100 border border-gray-300 text-gray-900 rounded-lg p-2 text-sm outline-none focus:border-[#ff5000]" placeholder="Ej: 1 año de garantía" />
+                              <button type="button" onClick={() => setProductForm({...productForm, features: productForm.features.filter((_,j) => j !== i)})} className="text-red-400 hover:text-red-600 font-bold text-xs px-2">✕</button>
+                            </div>
+                          ))}
+                        </div>
                         <div>
                           <div className="flex items-center justify-between mb-1">
                             <label className="text-xs font-bold text-gray-700">Imágenes (URLs)</label>
